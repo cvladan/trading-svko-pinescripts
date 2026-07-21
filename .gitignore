@@ -1,0 +1,5 @@
+# Publish only explicitly approved Pine Script files.
+*
+!/.gitignore
+!/SVKO_CFD_*
+!/SVKO_Info.*
