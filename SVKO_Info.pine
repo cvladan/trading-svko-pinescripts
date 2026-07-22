@@ -11,8 +11,10 @@ const int PERFORMANCE_STATE_VALID = 1
 const int PERFORMANCE_STATE_INVALID = 0
 const int PERFORMANCE_STATE_LIMIT = -1
 const float PERFORMANCE_OUT_OF_WINDOW = -1e30
-const string EARNINGS_WINDOW_TOOLTIP = "Show the Earnings row only when the next report is this many calendar days away or closer. Use 0 to disable the earnings request, table row, and alert values completely. To create a countdown alert, select SVKO Info's Days to Earnings plot as the condition, choose Crossing, and enter the required day value. The countdown uses the calculation symbol's earnings data; on CFD charts this is the mapped native TradingView symbol. Alerts recalculate when the chart receives an update."
-const string EARNINGS_FORMAT_TOOLTIP = "Format the Earnings row with date tokens and literal text. Supported tokens: EEEE, EEE, yyyy, yy, MMMM, MMM, MM, dd, HH, hh, mm, ss, a, and X. X inserts the complete countdown, for example 5 days or 1 day. MM means month; mm means minute. All other text is displayed literally. Default: EEE, dd MMM, in X."
+const string EARNINGS_WINDOW_TOOLTIP = "Show the Earnings row only when the next report is this many calendar days away or closer. Use 0 to disable the earnings request and table row completely. The countdown uses the calculation symbol's earnings data; on CFD charts this is the mapped native TradingView symbol."
+const string EARNINGS_FORMAT_TOOLTIP = "Format the Earnings row with date tokens and literal text. Supported tokens: EEEE, EEE, yyyy, yy, MMMM, MMM, MM, dd, HH, hh, mm, ss, a, and X. Use a as a standalone token for AM or PM. X inserts the complete countdown, for example 5 days or 1 day. MM means month; mm means minute. All other text is displayed literally. Default: EEE, dd MMM, in X."
+const string PAST_EARNINGS_WINDOW_TOOLTIP = "Show the Earnings row when the most recent reported earnings release was this many full days ago or less, unless the next report is within its own display window. Use 0 to disable the past earnings request and display completely. The event uses the calculation symbol's reported earnings data; on CFD charts this is the mapped native TradingView symbol."
+const string PAST_EARNINGS_FORMAT_TOOLTIP = "Format a past Earnings row with date tokens and literal text. Supported tokens: EEEE, EEE, yyyy, yy, MMMM, MMM, MM, dd, HH, hh, mm, ss, a, and X. Use a as a standalone token for AM or PM. X inserts the complete elapsed time, for example 5 days or 1 day. MM means month; mm means minute. All other text is displayed literally. Default: was X ago at dd MMM."
 const string DEFAULT_PERFORMANCE_FORMAT = "<since-2026-04-01> since 1 Apr, <last-5-days> 5D<nl><last-month> 1M, <ytd> YTD"
 const string PERFORMANCE_FORMAT_TOOLTIP = "Format one Performance row with up to 12 unique value placeholders. Supported values: <last-N-days>, <last-N-months>, <last-N-years>, <since-YYYY-MM-DD>, <last-month>, <last-year>, <ytd>, and <this-year>. Use <nl> for an unconditional new line. Use <cnl> for a new line shown only when its following segment contains at least one calculated value. A segment ends at the next <nl> or <cnl>. Control placeholders do not count towards the 12-value limit. Replace N with a positive whole number. Months equal 30 days and years equal 360 days. A period older than History window (days) is omitted together with its comma-separated item. Performance and history-high data refresh at most once every 30 seconds when the chart receives an update. Leave blank to disable the complete performance data path."
 const string HISTORY_WINDOW_TOOLTIP = "IMPORTANT: This is the main Performance speed control. It limits the shared daily history used by Performance and the history high. Performance periods that begin before this window are omitted from the row together with their comma-separated item. Smaller values usually calculate faster."
@@ -49,6 +51,8 @@ showAllTimeHighDetails = input.bool(false, "Show history-high price and date", g
 showAnalystAverageTarget = input.bool(true, "Show analyst average target", group = groupMarketData, display = display.data_window)
 showEarningsWithinDays = input.int(20, "Show earnings within (days)", minval = 0, tooltip = EARNINGS_WINDOW_TOOLTIP, group = groupEarnings, display = display.data_window)
 earningsFormat = input.string("EEE, dd MMM, in X", "Earnings format", tooltip = EARNINGS_FORMAT_TOOLTIP, group = groupEarnings, display = display.data_window, active = showEarningsWithinDays > 0)
+showPastEarningsWithinDays = input.int(15, "Show past earnings within (days)", minval = 0, tooltip = PAST_EARNINGS_WINDOW_TOOLTIP, group = groupEarnings, display = display.data_window)
+pastEarningsFormat = input.string("was X ago at dd MMM", "Past earnings format", tooltip = PAST_EARNINGS_FORMAT_TOOLTIP, group = groupEarnings, display = display.data_window, active = showPastEarningsWithinDays > 0)
 tableFontSize = input.int(12, "Table font size", minval = 1, tooltip = "Font size in typographic points.", group = groupTableStyling, display = display.data_window)
 tableRowHeightPercent = input.float(0.0, "Table row height (%)", minval = 0.0, maxval = 100.0, step = 0.1, tooltip = "Row height as a percentage of the chart window. Use 0 for automatic height.", group = groupTableStyling, display = display.data_window)
 tableFontFamilyInput = input.string("Monospace", "Table font family", options = ["Default", "Monospace"], group = groupTableStyling, display = display.data_window)
@@ -254,8 +258,23 @@ formatAnalystTarget(float target, float currentPrice) =>
 formatDays(int value) =>
     na(value) ? "N/A" : str.tostring(value) + (value == 1 ? " day" : " days")
 
+isAsciiLetter(string value) =>
+    str.length(value) == 1 and str.contains("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", value)
+
+markStandaloneAmPmTokens(string template) =>
+    string result = ""
+    int templateLength = str.length(template)
+    if templateLength > 0
+        for index = 0 to templateLength - 1
+            string character = str.substring(template, index, index + 1)
+            string previousCharacter = index > 0 ? str.substring(template, index - 1, index) : ""
+            string nextCharacter = index + 1 < templateLength ? str.substring(template, index + 1, index + 2) : ""
+            bool isStandaloneAmPmToken = character == "a" and not isAsciiLetter(previousCharacter) and not isAsciiLetter(nextCharacter)
+            result += isStandaloneAmPmToken ? "{12}" : character
+    result
+
 formatEarnings(int earningsTime, int days, string timezone, string template) =>
-    string result = template
+    string result = markStandaloneAmPmTokens(template)
     result := str.replace_all(result, "EEEE", "{0}")
     result := str.replace_all(result, "EEE", "{1}")
     result := str.replace_all(result, "yyyy", "{2}")
@@ -268,7 +287,6 @@ formatEarnings(int earningsTime, int days, string timezone, string template) =>
     result := str.replace_all(result, "hh", "{9}")
     result := str.replace_all(result, "mm", "{10}")
     result := str.replace_all(result, "ss", "{11}")
-    result := str.replace_all(result, "a", "{12}")
     result := str.replace_all(result, "X", "{13}")
     result := str.contains(result, "{0}") ? str.replace_all(result, "{0}", str.format_time(earningsTime, "EEEE", timezone)) : result
     result := str.contains(result, "{1}") ? str.replace_all(result, "{1}", str.format_time(earningsTime, "EEE", timezone)) : result
@@ -360,6 +378,13 @@ findLocalMappedSymbol(map<string, string> mappings, string chartSymbol, bool bro
 dailyAtrPercentValue() =>
     float dailyAtr = ta.atr(atrLength)
     close == 0 ? na : dailyAtr / close * 100
+
+latestReportedEarningsTime() =>
+    float reportedEarnings = request.earnings(syminfo.tickerid, earnings.actual, gaps = barmerge.gaps_on, ignore_invalid_symbol = true)
+    var int latestTime = na
+    if not na(reportedEarnings)
+        latestTime := time
+    latestTime
 
 regularDailyData(string template, bool trackAllTimeHigh, int historyDays) =>
     var float allTimeHigh = na
@@ -463,7 +488,7 @@ if (barstate.islastconfirmedhistory or barstate.islast) and hasCalculationSymbol
 hasValidPerformanceToken = hasValidPerformancePlaceholder(performanceStates)
 chartMarketClosed = not session.ismarket or timenow >= time_close
 mappedPriceMarketStateAllowsDisplay = not showMappedPriceOnlyWhenChartMarketClosed or chartMarketClosed
-hasEnabledMetric = showExtendedHours or showAtrPercent or showEarningsWithinDays > 0 or showPeRatios or showAllTimeHigh or companyNameMaxCharacters > 0 or showAnalystAverageTarget or hasValidPerformanceToken
+hasEnabledMetric = showExtendedHours or showAtrPercent or showEarningsWithinDays > 0 or showPastEarningsWithinDays > 0 or showPeRatios or showAllTimeHigh or companyNameMaxCharacters > 0 or showAnalystAverageTarget or hasValidPerformanceToken
 
 varip int regularDailyLastRefreshTime = na
 varip float cachedCalculationClose = na
@@ -505,6 +530,8 @@ float postmarketClose = na
 float previousPostmarketClose = na
 int daysToEarnings = na
 int earningsTime = na
+int daysSinceEarnings = na
+int pastEarningsTime = na
 string earningsTimezone = "UTC"
 float forwardPeRatio = na
 float peRatio = na
@@ -525,7 +552,54 @@ if barstate.islast and hasCalculationSymbol and hasEnabledMetric
             string regularTicker = ticker.modify(calculationSymbol, session = session.regular)
             calculationClose := request.security(regularTicker, "D", close, lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 2)
     // Tuple requests remain the primary speed optimisation when every bundled value is enabled; otherwise request only the enabled value.
-    if companyNameMaxCharacters > 0
+    if showPastEarningsWithinDays > 0
+        int dailyMetricBars = math.max(showPastEarningsWithinDays + 2, showAtrPercent ? atrLength + 1 : 1)
+        if companyNameMaxCharacters > 0
+            if showAtrPercent and showEarningsWithinDays > 0
+                [requestedDailyAtrPercent, requestedEarningsTime, requestedPastEarningsTime, requestedEarningsTimezone, requestedCompanyName] = request.security(calculationSymbol, "D", [dailyAtrPercentValue(), earnings.future_time, latestReportedEarningsTime(), syminfo.timezone, syminfo.description], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+                dailyAtrPercent := requestedDailyAtrPercent
+                earningsTime := requestedEarningsTime
+                pastEarningsTime := requestedPastEarningsTime
+                earningsTimezone := requestedEarningsTimezone
+                companyName := requestedCompanyName
+            else if showAtrPercent
+                [requestedDailyAtrPercent, requestedPastEarningsTime, requestedEarningsTimezone, requestedCompanyName] = request.security(calculationSymbol, "D", [dailyAtrPercentValue(), latestReportedEarningsTime(), syminfo.timezone, syminfo.description], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+                dailyAtrPercent := requestedDailyAtrPercent
+                pastEarningsTime := requestedPastEarningsTime
+                earningsTimezone := requestedEarningsTimezone
+                companyName := requestedCompanyName
+            else if showEarningsWithinDays > 0
+                [requestedEarningsTime, requestedPastEarningsTime, requestedEarningsTimezone, requestedCompanyName] = request.security(calculationSymbol, "D", [earnings.future_time, latestReportedEarningsTime(), syminfo.timezone, syminfo.description], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+                earningsTime := requestedEarningsTime
+                pastEarningsTime := requestedPastEarningsTime
+                earningsTimezone := requestedEarningsTimezone
+                companyName := requestedCompanyName
+            else
+                [requestedPastEarningsTime, requestedEarningsTimezone, requestedCompanyName] = request.security(calculationSymbol, "D", [latestReportedEarningsTime(), syminfo.timezone, syminfo.description], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+                pastEarningsTime := requestedPastEarningsTime
+                earningsTimezone := requestedEarningsTimezone
+                companyName := requestedCompanyName
+        else if showAtrPercent and showEarningsWithinDays > 0
+            [requestedDailyAtrPercent, requestedEarningsTime, requestedPastEarningsTime, requestedEarningsTimezone] = request.security(calculationSymbol, "D", [dailyAtrPercentValue(), earnings.future_time, latestReportedEarningsTime(), syminfo.timezone], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+            dailyAtrPercent := requestedDailyAtrPercent
+            earningsTime := requestedEarningsTime
+            pastEarningsTime := requestedPastEarningsTime
+            earningsTimezone := requestedEarningsTimezone
+        else if showAtrPercent
+            [requestedDailyAtrPercent, requestedPastEarningsTime, requestedEarningsTimezone] = request.security(calculationSymbol, "D", [dailyAtrPercentValue(), latestReportedEarningsTime(), syminfo.timezone], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+            dailyAtrPercent := requestedDailyAtrPercent
+            pastEarningsTime := requestedPastEarningsTime
+            earningsTimezone := requestedEarningsTimezone
+        else if showEarningsWithinDays > 0
+            [requestedEarningsTime, requestedPastEarningsTime, requestedEarningsTimezone] = request.security(calculationSymbol, "D", [earnings.future_time, latestReportedEarningsTime(), syminfo.timezone], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+            earningsTime := requestedEarningsTime
+            pastEarningsTime := requestedPastEarningsTime
+            earningsTimezone := requestedEarningsTimezone
+        else
+            [requestedPastEarningsTime, requestedEarningsTimezone] = request.security(calculationSymbol, "D", [latestReportedEarningsTime(), syminfo.timezone], ignore_invalid_symbol = true, calc_bars_count = dailyMetricBars)
+            pastEarningsTime := requestedPastEarningsTime
+            earningsTimezone := requestedEarningsTimezone
+    else if companyNameMaxCharacters > 0
         if showAtrPercent and showEarningsWithinDays > 0
             [requestedDailyAtrPercent, requestedEarningsTime, requestedEarningsTimezone, requestedCompanyName] = request.security(calculationSymbol, "D", [dailyAtrPercentValue(), earnings.future_time, syminfo.timezone, syminfo.description], ignore_invalid_symbol = true)
             dailyAtrPercent := requestedDailyAtrPercent
@@ -587,13 +661,15 @@ if isBrokerChart and hasMappedSymbol and mappedPriceLineLength > 0 and (primeMap
 
 daysToEarnings := na(earningsTime) ? na : int(math.ceil((float(earningsTime) - float(timenow)) / 86400000.0))
 daysToEarnings := not na(daysToEarnings) and daysToEarnings >= 0 ? daysToEarnings : na
-bool showEarningsRow = showEarningsWithinDays > 0 and not na(daysToEarnings) and daysToEarnings <= showEarningsWithinDays
-bool highlightEarningsRow = showEarningsRow and daysToEarnings <= 10
-string earningsText = hasCalculationSymbol and showEarningsRow ? formatEarnings(earningsTime, daysToEarnings, earningsTimezone, earningsFormat) : ""
+daysSinceEarnings := na(pastEarningsTime) ? na : int(math.floor((float(timenow) - float(pastEarningsTime)) / 86400000.0))
+daysSinceEarnings := not na(daysSinceEarnings) and daysSinceEarnings >= 0 ? daysSinceEarnings : na
+bool showFutureEarningsRow = showEarningsWithinDays > 0 and not na(daysToEarnings) and daysToEarnings <= showEarningsWithinDays
+bool showPastEarningsRow = not showFutureEarningsRow and showPastEarningsWithinDays > 0 and not na(daysSinceEarnings) and daysSinceEarnings <= showPastEarningsWithinDays
+bool showEarningsRow = showFutureEarningsRow or showPastEarningsRow
+bool highlightEarningsRow = showFutureEarningsRow and daysToEarnings <= 10
+string earningsText = hasCalculationSymbol and showFutureEarningsRow ? formatEarnings(earningsTime, daysToEarnings, earningsTimezone, earningsFormat) : hasCalculationSymbol and showPastEarningsRow ? formatEarnings(pastEarningsTime, daysSinceEarnings, earningsTimezone, pastEarningsFormat) : ""
 string performanceText = hasCalculationSymbol and showPerformanceRow ? formatPerformance(performanceFormat, performancePlaceholders, performanceStates, performanceStartCloses, calculationClose) : ""
 bool showRenderedPerformanceRow = showPerformanceRow and str.length(str.trim(performanceText)) > 0
-
-plot(hasCalculationSymbol and showEarningsWithinDays > 0 ? daysToEarnings : na, "Days to Earnings", display = display.none)
 
 var line mappedPriceLine = na
 var box mappedPriceTextBox = na

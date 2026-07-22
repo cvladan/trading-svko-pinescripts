@@ -1,0 +1,50 @@
+SVKO CFD Symbol Mapper
+
+SVKO CFD Symbol Mapper resolves broker CFD tickers to their native TradingView symbols and performs reverse lookups for compatible indicators. It provides one shared mapping source instead of duplicating mappings across companion scripts.
+
+
+█ [b]OVERVIEW[/b]
+
+This is a visually silent helper indicator. It does not draw signals, levels, tables, or volume. It resolves the counterpart of the current chart symbol and transports that symbol to a receiving indicator.
+
+
+█ [b]HOW IT WORKS[/b]
+
+The Mapper checks user supplied [i]Symbol Mappings[/i] before its built in mappings. Each pair uses a complete TradingView ticker ID on both sides in this form:
+
+ TRADENATION:NVDA.EX = NASDAQ:NVDA
+
+On a supported broker chart, the Mapper returns the native TradingView symbol. On a native TradingView chart, it performs the inverse lookup and returns the first matching CFD symbol.
+
+Pine Script cannot pass a ticker string between indicators through `input.source()`. The Mapper therefore encodes the resolved ticker into two hidden numeric plots named [i]1st code[/i] and [i]2nd code[/i]. A compatible receiving indicator reads both plots and reconstructs the symbol.
+
+
+█ [b]HOW TO USE[/b]
+
+ • Add SVKO CFD Symbol Mapper to the chart.
+ • Add any required custom pairs to [i]Symbol Mappings[/i].
+ • Add a compatible receiving indicator.
+ • In that indicator, select [i]Map: 1st code[/i] for its [i]1st code[/i] input and [i]Map: 2nd code[/i] for its [i]2nd code[/i] input. Both selections must come from the same Mapper instance.
+
+The Mapper remains visually silent after connection.
+
+
+█ [b]MAPPING BEHAVIOUR[/b]
+
+Custom mappings take priority in both directions. If several CFD symbols point to the same native symbol, inverse lookup returns the first pair in mapping order.
+
+Delayed native exchange suffixes _DL and _DLY are normalised before lookup. If no mapping exists, both code plots return zero.
+
+The Mapper transports symbol identity only. It does not request price, volume, fundamentals, or other data from the resolved symbol.
+
+
+█ [b]LIMITATIONS[/b]
+
+The transported ticker can contain at most 18 encoded characters. Supported characters are uppercase letters, digits, dash, colon, dot, and underscore. Unsupported characters produce a runtime error.
+
+The receiving indicator is responsible for requesting and interpreting data from the transported symbol.
+
+
+█ [b]CREDITS AND LICENCE[/b]
+
+Original work by SVKO. Published open source under the Mozilla Public License 2.0.

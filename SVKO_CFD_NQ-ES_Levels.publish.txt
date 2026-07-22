@@ -1,0 +1,59 @@
+SVKO CFD NQ-ES Levels
+
+SVKO CFD NQ-ES Levels translates the mapped underlying market's daily percentage change into practical price levels on Nasdaq 100 and S&P 500 CFD charts. It makes the mapped move visible directly on the CFD chart without manual conversion.
+
+
+█ [b]OVERVIEW[/b]
+
+The main level is 0%. It represents the chart price implied when the mapped symbol's standard daily Change % is zero. Configurable levels above and below that anchor show where the CFD price sits in percentage terms.
+
+The optional current-price label remains live and shows the chart price's percentage distance from the stored 0% basis.
+
+
+█ [b]HOW IT WORKS[/b]
+
+TradingView does not expose a watchlist Change % column to Pine. The indicator reproduces that value from the mapped symbol's current and previous daily closes, removes it from the current CFD price, and stores the resulting 0% basis.
+
+The first valid basis is held for the active mapping. It changes only when the session mapping changes, the indicator reloads, or its inputs change. This keeps the displayed levels fixed during each mapping period while the current-price label continues to move.
+
+
+█ [b]MAPPING AND SESSIONS[/b]
+
+The indicator owns separate mapping lists for the configured weekday main session and for all other times. This allows an ETF reference during the main session and a futures reference outside it.
+
+Each mapping uses one complete TradingView source and target ticker pair per line. This indicator does not require SVKO CFD Symbol Mapper because its reference symbol changes with the session.
+
+
+█ [b]HOW TO USE[/b]
+
+ • Add the indicator to a supported Nasdaq 100 or S&P 500 CFD chart.
+ • Confirm that the chart symbol appears on the left side of both mapping lists.
+ • Adjust the main session when your workflow uses different New York session hours.
+ • Choose the percentage step and the number of levels above and below 0%.
+ • Position and style the levels and current-price label beside the latest candle.
+
+
+█ [b]POSITION AND DISPLAY[/b]
+
+Distance and line-length settings use one-minute bar equivalents. On higher chart timeframes, the indicator reduces the chart-bar count to preserve approximately the same elapsed-time spacing.
+
+The zero, upper, and lower levels have independent styles. The current-price label can sit immediately after the latest candle, use additional padding, or align with the level endpoints.
+
+
+█ [b]ALERTS[/b]
+
+This indicator does not define alert conditions.
+
+
+█ [b]LIMITATIONS[/b]
+
+The reproduced percentage uses the mapped symbol's standard TradingView daily data and is not a direct watchlist read. Futures daily closes can inherit settlement behaviour from TradingView's ticker settings.
+
+The 0% basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
+
+Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and mapped symbol diverge. If the active mapping or daily data is unavailable, the indicator draws nothing.
+
+
+█ [b]CREDITS AND LICENCE[/b]
+
+Original work by SVKO. Published open source under the Mozilla Public License 2.0.

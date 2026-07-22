@@ -1,13 +1,64 @@
 # SVKO CFD Symbol Mapper: internal notes
 
-## Publishing settings
+## Detailed user documentation
 
-- Privacy: Public
-- Access: Open-source
-- Categories: TODO
-- Tags: TODO
-- Licence: Mozilla Public License 2.0
-- Author's instructions: N/A
+### Purpose
+
+SVKO CFD Symbol Mapper resolves broker CFD tickers to their native TradingView symbols and performs reverse lookups for compatible indicators. It provides one shared mapping source instead of requiring every receiving script to carry the same mapping table.
+
+The Mapper is a visually silent helper. It does not draw signals, levels, tables, or volume, and it does not request price, volume, fundamentals, or other data from the resolved symbol.
+
+### Mapping format and precedence
+
+Enter one complete CFD-to-native ticker pair per line in **Symbol Mappings**:
+
+```text
+TRADENATION:NVDA.EX = NASDAQ:NVDA
+IG:AAPL = NASDAQ:AAPL
+```
+
+Custom pairs are checked before the built-in Trade Nation map and take priority in both directions. On a supported broker chart, the Mapper returns the native TradingView symbol. On a native TradingView chart, it returns the first matching CFD symbol.
+
+When several CFD symbols point to the same US listing, inverse lookup uses deterministic `NASDAQ`, then `NYSE`, then `BATS` precedence. This also handles native symbols that TradingView standardises to its BATS feed. Mapping order determines the first result when several CFD sources still resolve to the same target.
+
+Delayed native exchange suffixes `_DL` and `_DLY` are removed for lookup identity. The original delayed chart symbol remains the chart's own data source.
+
+### Connecting a receiving indicator
+
+Pine `input.source()` cannot transport a ticker string directly, so the Mapper encodes the resolved ticker into two hidden numeric plots:
+
+- `1st code`
+- `2nd code`
+
+Add the Mapper and the compatible receiving indicator to the same chart. In the receiving indicator, select `Map: 1st code` for its **1st code** input and `Map: 2nd code` for its **2nd code** input. Both sources must come from the same Mapper instance.
+
+Compatible receiving indicators currently include:
+
+- SVKO Info
+- SVKO CFD Stocks & NQ-ES Real Volume
+
+If no mapping is found, both transport plots return zero and the receiving indicator decides how to handle the unresolved result.
+
+### Transport details and limitations
+
+The resolved ticker is split into two chunks of up to nine encoded characters, for an 18-character transport limit. Supported characters are uppercase letters, digits, dash, colon, dot, and underscore. An unsupported character or an overlong ticker produces a runtime error.
+
+Long Trade Nation exchange prefixes are compacted during transport and expanded by compatible receivers:
+
+```text
+TRADENATION:   -> TN_
+TRADENATIONSB: -> TNSB_
+```
+
+The transport contains symbol identity only. The receiving indicator is responsible for requesting the mapped symbol and interpreting its data.
+
+### Alerts
+
+The Mapper defines no alert conditions.
+
+### Credits and licence
+
+Original work by SVKO. Published open source under the Mozilla Public License 2.0.
 
 ## Chart preparation
 
@@ -15,12 +66,15 @@ Use a clean chart with SVKO CFD Symbol Mapper and one visible receiving indicato
 
 ## Publishing procedure
 
-1. Compile and verify the saved cloud source through the repo-local Pine sync workflow.
-2. Prepare the clean demonstration chart and confirm the receiving indicator resolves a mapped symbol.
-3. Create a separate private open-source test publication using the title and description from `SVKO_CFD_Symbol_Mapper.publish.md`.
-4. Review the private script page, chart image, source visibility, title, and description.
-5. After explicit final approval, create a new publication with Privacy set to Public and Access set to Open-source.
-6. Inspect the public page immediately while TradingView still permits limited corrections.
+1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
+2. Use the existing `SVKO Publish` chart as the publication image without repeating indicator tests.
+3. Publish directly with Privacy set to Public and Access set to Open-source using the exact TradingView-formatted description from `SVKO_CFD_Symbol_Mapper.publish.txt` after explicit action-time confirmation.
+4. Inspect the public page immediately while TradingView still permits limited corrections.
+
+## Publication record
+
+- Submitted: 21 July 2026
+- Public page URL: https://www.tradingview.com/script/XCvJ5tx9-SVKO-CFD-Symbol-Mapper/
 
 ## Internal implementation notes
 
@@ -47,20 +101,14 @@ Use a clean chart with SVKO CFD Symbol Mapper and one visible receiving indicato
 - Loaded the validated Trade Nation symbol pairs from `tradenation/tradenation-symbol-pairs.txt` into the fallback map.
 - Expanded encoding to support digits and underscores in mapped symbols.
 
-## Pending public release notes
-
-N/A for the initial publication.
-
 ## Pre-publish checklist
 
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified
-- [ ] Pine script added to the intended chart
+- [ ] Exact saved script is available in the existing `SVKO Publish` layout
 - [ ] Receiving indicator connected to both code plots
 - [ ] Chart contains only necessary scripts, drawings, and images
 - [ ] Symbol, timeframe, Pine script name, and receiving output are clear
 - [ ] Publication title and description are final
 - [ ] Limitations and transport behaviour are documented
 - [ ] Attribution and licence are verified
-- [ ] Privacy, access, categories, and tags are verified
-- [ ] Private draft reviewed before public publication

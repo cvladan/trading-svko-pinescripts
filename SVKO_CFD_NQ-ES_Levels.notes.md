@@ -1,13 +1,88 @@
 # SVKO CFD NQ-ES Levels: internal notes
 
-## Publishing settings
+## Detailed user documentation
 
-- Privacy: Public
-- Access: Open-source
-- Categories: TODO
-- Tags: TODO
-- Licence: Mozilla Public License 2.0
-- Author's instructions: N/A
+### Purpose and levels
+
+SVKO CFD NQ-ES Levels translates the mapped underlying market's daily percentage change into price levels on Nasdaq 100 and S&P 500 CFD charts. It makes the mapped move visible directly on the CFD chart without manual conversion.
+
+The central `0%` level is the CFD price implied when the mapped symbol's standard daily Change % is zero. With the default 0.5% step and two levels on either side, the displayed set is:
+
+```text
+-1.0%
+-0.5%
+ 0.0%
++0.5%
++1.0%
+```
+
+The optional current-price label remains live and shows the chart price's percentage distance from the stored `0%` basis.
+
+### Calculation and snapshot behaviour
+
+TradingView does not expose the watchlist Change % column directly to Pine. The indicator reproduces it from the mapped symbol's current daily close and previous daily close, removes that percentage move from the current CFD price, and stores the resulting `0%` basis.
+
+The first valid live basis is cached for the active mapping. It changes only when the main-session mapping state changes, the indicator reloads, or an input change causes a reload. This keeps all levels fixed during a mapping period while the current-price label continues to move.
+
+The basis is not tick-rounded, so its initial percentage matches the mapped symbol's reproduced Change % without an additional rounding difference. The last confirmed historical bar does not commit the cache; the initial snapshot waits for the mapped symbol's current last-bar value.
+
+### Mappings and sessions
+
+The indicator owns two independent mapping lists because the reference changes by session. It does not use or require SVKO CFD Symbol Mapper.
+
+The default weekday main session is `09:30-16:00` in `America/New_York`. During that session, the defaults use QQQ for Nasdaq 100 CFDs and SPY for S&P 500 CFDs:
+
+```text
+IG:NASDAQ = NASDAQ:QQQ
+TRADENATION:USTEC = NASDAQ:QQQ
+TRADENATIONSB:USTEC = NASDAQ:QQQ
+IG:SPTRD = AMEX:SPY
+TRADENATION:US500 = AMEX:SPY
+TRADENATIONSB:US500 = AMEX:SPY
+```
+
+Outside the main session, the defaults use current NQ, MNQ, and ES continuous futures:
+
+```text
+IG:NASDAQ = CME_MINI:NQ1!
+TRADENATION:USTEC = CME_MINI:MNQ1!
+TRADENATIONSB:USTEC = CME_MINI:MNQ1!
+IG:SPTRD = CME_MINI:ES1!
+TRADENATION:US500 = CME_MINI:ES1!
+TRADENATIONSB:US500 = CME_MINI:ES1!
+```
+
+Each custom entry must use one complete TradingView source and target ticker pair per line. Native TradingView charts calculate from their own standard ticker; supported broker charts calculate from the active mapped target.
+
+### Position and display defaults
+
+The default distance from the latest candle is 50 one-minute bar equivalents. The `0%` line defaults to 400 one-minute bar equivalents, while other levels default to 200. On higher chart timeframes, these values are converted to fewer chart bars to preserve approximately the same elapsed-time spacing. The combined distance and each line length are capped at 500 future chart bars.
+
+The default level labels are enabled, use 10-point monospace text, and follow `<price> / <percent>`. Labels are right-aligned at the right end of their lines. Zero, upper, and lower levels have separate line styles, widths, line colours, and text colours. The `0%` level defaults to an opaque `#B3B3B3` dotted line; upper levels use lime and lower levels use red.
+
+The moving current-price label defaults to `<percent>`. Its position input uses:
+
+- `0` to place a left-aligned label immediately after the latest candle;
+- a positive value to add that many empty chart bars;
+- `-1` to preserve the older right-aligned position at the level-line endpoint.
+
+Leave the current-price label format empty to hide that label.
+
+### Alerts
+
+The indicator defines no alert conditions.
+
+### Limitations
+
+The reproduced percentage uses TradingView daily data rather than a direct watchlist read. Futures daily closes can inherit settlement behaviour from TradingView's ticker settings.
+
+The `0%` basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
+
+Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and mapped symbol diverge. If the active mapping or daily data is unavailable, the indicator draws nothing.
+
+### Credits and licence
+
+Original work by SVKO. Published open source under the Mozilla Public License 2.0.
 
 ## Chart preparation
 
@@ -15,12 +90,10 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 
 ## Publishing procedure
 
-1. Compile and verify the saved cloud source through the repo-local Pine sync workflow.
-2. Prepare the clean chart and confirm that the active mapping, 0% basis, secondary levels, and current price label are legible.
-3. Create a separate private open-source test publication using the title and description from `SVKO_CFD_NQ-ES_Levels.publish.md`.
-4. Review the private page, chart image, source visibility, title, description, and absence of any stated Mapper dependency.
-5. After explicit final approval, create a new publication with Privacy set to Public and Access set to Open-source.
-6. Inspect the public page immediately while TradingView still permits limited corrections.
+1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
+2. Use the existing `SVKO Publish` chart and the existing script instance when present. Do not add a duplicate or open another layout merely for publication.
+3. Publish directly with Privacy set to Public and Access set to Open-source using the exact TradingView-formatted description from `SVKO_CFD_NQ-ES_Levels.publish.txt` after explicit action-time confirmation.
+4. Inspect the public page immediately while TradingView still permits limited corrections, including title, rendered description, chart image, categories, access, and source visibility.
 
 ## Internal implementation notes
 
@@ -47,15 +120,16 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 - Changed level distance and line length settings to one minute bar equivalents that scale down automatically on higher chart timeframes.
 - Added one current price positioning input. `0` places a left aligned label immediately after the latest candle, positive values add padding, and `-1` preserves the previous right aligned position.
 
-## Pending public release notes
+## Publication record
 
-N/A for the initial publication.
+- Submitted: 21 July 2026
+- Public page URL: https://www.tradingview.com/script/VWtZmFRE-SVKO-CFD-NQ-ES-Levels/
 
 ## Pre-publish checklist
 
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified
-- [ ] Pine script added to the intended chart
+- [ ] Exact saved script is available in the existing `SVKO Publish` layout
 - [ ] Both mapping lists resolve on the selected chart
 - [ ] Main session and outside main session behaviour verified
 - [ ] Chart contains only necessary scripts, drawings, and images
@@ -63,5 +137,3 @@ N/A for the initial publication.
 - [ ] Publication title and description are final
 - [ ] Snapshot and realtime behaviour are documented
 - [ ] Attribution and licence are verified
-- [ ] Privacy, access, categories, and tags are verified
-- [ ] Private draft reviewed before public publication
