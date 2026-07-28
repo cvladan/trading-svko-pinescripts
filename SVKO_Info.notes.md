@@ -61,6 +61,18 @@ The default format is:
 <since-2026-04-01> since 1 Apr, <last-5-days> 5D<nl><last-month> 1M, <ytd> YTD
 ```
 
+Long format for desktop:
+
+```text
+<last-5-days> 5D, <last-month> 1M, <last-3-months> 3M, <since-2026-04-01> since 1 Apr, <ytd> YTD, <last-1-years> 1Y
+```
+
+Width-optimised format for phones:
+
+```text
+<last-5-days> 5D, <last-month> 1M<nl><last-3-months> 3M, <ytd> YTD<nl><last-1-years> 1Y
+```
+
 The **History window (days)** input defaults to 365 and is the main Performance speed control. A requested period beginning before that window is omitted together with its comma-separated item. The same daily history request supplies the history-high row and refreshes at most once every 30 seconds when the chart receives an update. Leaving **Performance format** blank disables the complete Performance path.
 
 Performance excludes dividends, currency conversion, position sizing, fees, and extended-hours movement.
