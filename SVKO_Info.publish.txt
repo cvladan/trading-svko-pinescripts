@@ -61,3 +61,7 @@ Original work by SVKO. Published open source under the Mozilla Public License 2.
 [b]22 July 2026[/b]
 
 Earnings information will show a recent release when no upcoming report is shown. Settings control the recent earnings window and format.
+
+[b]23 July 2026[/b]
+
+The history high row now uses one display control and a custom multiline format for its age, decline, recovery, price, and date.

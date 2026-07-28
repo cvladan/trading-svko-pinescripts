@@ -11,7 +11,7 @@ Depending on enabled inputs and TradingView data availability, the table can sho
 - company and symbol identity;
 - a custom multi-period Performance row;
 - current extended-hours movement;
-- a configurable history high with age, decline, recovery, price, and date details;
+- a configurable history high with a custom multiline age, decline, recovery, price, and date format;
 - daily ATR as a percentage;
 - the next earnings date and countdown, or the most recent reported release and elapsed days;
 - average analyst target with upside or downside runway;
@@ -76,6 +76,25 @@ Width-optimised format for phones:
 The **History window (days)** input defaults to 365 and is the main Performance speed control. A requested period beginning before that window is omitted together with its comma-separated item. The same daily history request supplies the history-high row and refreshes at most once every 30 seconds when the chart receives an update. Leaving **Performance format** blank disables the complete Performance path.
 
 Performance excludes dividends, currency conversion, position sizing, fees, and extended-hours movement.
+
+### History high format
+
+**Show history high** is the only display control for this row. The left cell uses the selected history window, such as `365d High`. The **History high format** input controls the complete value cell with these placeholders:
+
+- `<age>` inserts the complete age, such as `123d ago`;
+- `<decline>` inserts the decline from the history high, including `%`;
+- `<recovery>` inserts the rise required to return to the history high, including `%`;
+- `<price>` inserts the history high price;
+- `<date>` inserts the history high date;
+- `<nl>` inserts an unconditional line break.
+
+The default format is:
+
+```text
+<age><nl>▼ <decline> = ▲ <recovery><nl><price> @ <date>
+```
+
+Other text remains literal. When the history high is unavailable, the value remains `N/A`.
 
 ### Market data and mapped price marker
 

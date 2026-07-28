@@ -15,6 +15,8 @@ const string EARNINGS_WINDOW_TOOLTIP = "Show the Earnings row only when the next
 const string EARNINGS_FORMAT_TOOLTIP = "Format the Earnings row with date tokens and literal text. Supported tokens: EEEE, EEE, yyyy, yy, MMMM, MMM, MM, dd, HH, hh, mm, ss, a, and X. Use a as a standalone token for AM or PM. X inserts the complete countdown, for example 5 days or 1 day. MM means month; mm means minute. All other text is displayed literally. Default: EEE, dd MMM, in X."
 const string PAST_EARNINGS_WINDOW_TOOLTIP = "Show the Earnings row when the most recent reported earnings release was this many full days ago or less, unless the next report is within its own display window. Use 0 to disable the past earnings request and display completely. The event uses the calculation symbol's reported earnings data; on CFD charts this is the mapped native TradingView symbol."
 const string PAST_EARNINGS_FORMAT_TOOLTIP = "Format a past Earnings row with date tokens and literal text. Supported tokens: EEEE, EEE, yyyy, yy, MMMM, MMM, MM, dd, HH, hh, mm, ss, a, and X. Use a as a standalone token for AM or PM. X inserts the complete elapsed time, for example 5 days or 1 day. MM means month; mm means minute. All other text is displayed literally. Default: was X ago at dd MMM."
+const string DEFAULT_HISTORY_HIGH_FORMAT = "<age><nl>▼ <decline> = ▲ <recovery><nl><price> @ <date>"
+const string HISTORY_HIGH_FORMAT_TOOLTIP = "Format the History high value with <age>, <decline>, <recovery>, <price>, and <date>. Age includes the elapsed days and 'ago'. Decline and recovery include the percent sign. Use <nl> for a new line. Other text is displayed literally. Default: <age><nl>▼ <decline> = ▲ <recovery><nl><price> @ <date>."
 const string DEFAULT_PERFORMANCE_FORMAT = "<since-2026-04-01> since 1 Apr, <last-5-days> 5D<nl><last-month> 1M, <ytd> YTD"
 const string PERFORMANCE_FORMAT_TOOLTIP = "Format one Performance row with up to 12 unique value placeholders. Supported values: <last-N-days>, <last-N-months>, <last-N-years>, <since-YYYY-MM-DD>, <last-month>, <last-year>, <ytd>, and <this-year>. Use <nl> for an unconditional new line. Use <cnl> for a new line shown only when its following segment contains at least one calculated value. A segment ends at the next <nl> or <cnl>. Control placeholders do not count towards the 12-value limit. Replace N with a positive whole number. Months equal 30 days and years equal 360 days. A period older than History window (days) is omitted together with its comma-separated item. Performance and history-high data refresh at most once every 30 seconds when the chart receives an update. Leave blank to disable the complete performance data path."
 const string HISTORY_WINDOW_TOOLTIP = "IMPORTANT: This is the main Performance speed control. It limits the shared daily history used by Performance and the history high. Performance periods that begin before this window are omitted from the row together with their comma-separated item. Smaller values usually calculate faster."
@@ -47,7 +49,7 @@ showAtrPercent = input.bool(true, "Show ATR percentage", group = groupMarketData
 atrLength = input.int(14, "ATR length", minval = 1, group = groupMarketData, display = display.data_window, active = showAtrPercent)
 showPeRatios = input.bool(true, "Show P/E ratios", group = groupMarketData, display = display.data_window)
 showAllTimeHigh = input.bool(true, "Show history high", group = groupMarketData, display = display.data_window)
-showAllTimeHighDetails = input.bool(false, "Show history-high price and date", group = groupMarketData, display = display.data_window, active = showAllTimeHigh)
+historyHighFormat = input.string(DEFAULT_HISTORY_HIGH_FORMAT, "History high format", tooltip = HISTORY_HIGH_FORMAT_TOOLTIP, group = groupMarketData, display = display.data_window, active = showAllTimeHigh)
 showAnalystAverageTarget = input.bool(true, "Show analyst average target", group = groupMarketData, display = display.data_window)
 showEarningsWithinDays = input.int(20, "Show earnings within (days)", minval = 0, tooltip = EARNINGS_WINDOW_TOOLTIP, group = groupEarnings, display = display.data_window)
 earningsFormat = input.string("EEE, dd MMM, in X", "Earnings format", tooltip = EARNINGS_FORMAT_TOOLTIP, group = groupEarnings, display = display.data_window, active = showEarningsWithinDays > 0)
@@ -325,6 +327,15 @@ formatMappedPriceLabel(string tickerId, string priceText, string template) =>
     result := str.replace_all(result, "<exchange>", exchange)
     str.replace_all(result, "<price>", priceText)
 
+formatHistoryHigh(string template, int ageDays, float declinePercent, float recoveryPercent, float price, int highTime) =>
+    string highDate = str.tostring(year(highTime)) + "-" + str.tostring(month(highTime)) + "-" + str.tostring(dayofmonth(highTime))
+    string result = str.replace_all(template, "<age>", str.tostring(ageDays) + "d ago")
+    result := str.replace_all(result, "<decline>", str.tostring(declinePercent, "#.##") + "%")
+    result := str.replace_all(result, "<recovery>", str.tostring(recoveryPercent, "#.##") + "%")
+    result := str.replace_all(result, "<price>", str.tostring(price, format.mintick))
+    result := str.replace_all(result, "<date>", highDate)
+    str.replace_all(result, "<nl>", "\n")
+
 normaliseBrokerExchangePrefixes(string prefixes) =>
     "," + str.upper(str.replace_all(prefixes, " ", "")) + ","
 
@@ -544,10 +555,7 @@ if barstate.islast and hasCalculationSymbol and hasEnabledMetric
                 int allTimeHighDays = math.max(0, int(math.floor((float(timenow) - float(requestedAllTimeHighTime)) / 86400000.0)))
                 float dropFromAllTimeHigh = math.max(0, (requestedAllTimeHigh - calculationClose) / requestedAllTimeHigh * 100)
                 float riseToAllTimeHigh = math.max(0, (requestedAllTimeHigh / calculationClose - 1) * 100)
-                allTimeHighText := str.tostring(allTimeHighDays) + "d ago, ▼ " + str.tostring(dropFromAllTimeHigh, "#.##") + "% = ▲ " + str.tostring(riseToAllTimeHigh, "#.##") + "%"
-                if showAllTimeHighDetails
-                    string allTimeHighDate = str.tostring(year(requestedAllTimeHighTime)) + "-" + str.tostring(month(requestedAllTimeHighTime)) + "-" + str.tostring(dayofmonth(requestedAllTimeHighTime))
-                    allTimeHighText += ", " + str.tostring(requestedAllTimeHigh, format.mintick) + " @ " + allTimeHighDate
+                allTimeHighText := formatHistoryHigh(historyHighFormat, allTimeHighDays, dropFromAllTimeHigh, riseToAllTimeHigh, requestedAllTimeHigh, requestedAllTimeHighTime)
         else
             string regularTicker = ticker.modify(calculationSymbol, session = session.regular)
             calculationClose := request.security(regularTicker, "D", close, lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 2)
@@ -732,8 +740,8 @@ if barstate.islast and hasCalculationSymbol
         table.cell(infoTable, 1, row, formatExtendedHours(extendedHoursChange, extendedHoursSession, previousPostmarketChange, premarketChange, postmarketChange), height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
         row += 1
     if hasCalculationSymbol and showAllTimeHigh
-        table.cell(infoTable, 0, row, str.tostring(historyWindowDays) + "d High", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
-        table.cell(infoTable, 1, row, allTimeHighText, height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
+        table.cell(infoTable, 0, row, str.tostring(historyWindowDays) + "d High", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_valign = text.align_top, text_size = tableFontSize, text_font_family = tableFontFamily)
+        table.cell(infoTable, 1, row, allTimeHighText, height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_valign = text.align_top, text_size = tableFontSize, text_font_family = tableFontFamily)
         row += 1
     if hasCalculationSymbol and showAtrPercent
         table.cell(infoTable, 0, row, "Daily ATR", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
