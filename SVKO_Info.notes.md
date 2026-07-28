@@ -113,9 +113,9 @@ Set line length to `0` to hide the marker and disable its mapped-price request. 
 
 The company-name row defaults to a 20-character limit. Set the limit to `0` to hide the row and disable its request.
 
-The Earnings row uses separate windows for upcoming and recent reports. The upcoming window defaults to 20 days with the format `EEE, dd MMM, in X`. The recent window defaults to 15 full elapsed days with the format `was X ago at dd MMM`. `X` inserts `1 day` or `N days`, and a report on the current day appears as `0 days`. Other supported date tokens are `EEEE`, `EEE`, `yyyy`, `yy`, `MMMM`, `MMM`, `MM`, `dd`, `HH`, `hh`, `mm`, `ss`, and `a`. Use `a` as a standalone token for AM or PM so letters inside literal words remain unchanged.
+The Earnings row uses separate windows for upcoming and recent reports. The upcoming window defaults to 20 days with the format `EEE, dd MMM, in X`. The recent window defaults to 15 full elapsed days with the format `was X ago at dd MMM`. `X` inserts `1 day` or `N days`. A report due later on the current exchange-local day appears as bold red `later today`. After its scheduled time or reported release on the same day, it appears as bold green `was today`. Other supported date tokens are `EEEE`, `EEE`, `yyyy`, `yy`, `MMMM`, `MMM`, `MM`, `dd`, `HH`, `hh`, `mm`, `ss`, and `a`. Use `a` as a standalone token for AM or PM so letters inside literal words remain unchanged.
 
-An upcoming report inside its window has priority. When none qualifies, the row shows the most recent reported release if it is inside the recent window. Upcoming reports within 10 days use bold red text, while recent reports use the normal table style. Setting either window to `0` disables only that request and display path. Setting both to `0` disables the complete earnings path.
+An upcoming report inside its window has priority. When none qualifies, the row shows the most recent reported release if it is inside the recent window. Upcoming reports within 10 days use bold red text. Reports already released today use bold green text, while older recent reports use the normal table style. Setting either window to `0` disables only that request and display path. Setting both to `0` disables the complete earnings path.
 
 The table defaults to 12-point monospace text, automatic row height, transparent background, no inner borders, and no outer frame. Table font family, size, row height, frame width, and background colour are configurable.
 
@@ -160,6 +160,8 @@ Use a clean chart where the bottom right table is legible and the mapped price m
 
 ## Development history
 
+- Added distinct same-day Earnings states: bold red `later today` before the report and bold green `was today` after it.
+- Replaced the separate history high detail control with one custom multiline format supporting `<age>`, `<decline>`, `<recovery>`, `<price>`, `<date>`, and `<nl>`.
 - Added an optional recent earnings window and format. The Earnings row now prefers an upcoming report, then shows the most recent reported release with full elapsed days when it is still inside the recent window.
 - Removed the hidden `Days to Earnings` plot and its manually configured alert path.
 - Top aligned both Performance cells for multiline formats. Pine tables do not expose text line spacing, so no artificial blank line or row-height workaround was added.

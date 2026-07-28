@@ -37,7 +37,9 @@ Performance uses regular-session daily prices and supports rolling periods, cale
 
 On broker charts, Extended Hours compares the active native premarket or postmarket price with the broker chart price. During premarket, Post measures the move from the broker price to the preceding native postmarket close, while Pre measures the next move from that postmarket close to the active native premarket price. On native charts, the total retains the most recent regular-session close as its baseline. Daily ATR always uses daily data, regardless of the chart timeframe.
 
-Within their configured windows, the Earnings row shows the next report first. When no upcoming report qualifies, it can show how many full days have passed since the most recent reported release. Each window can be disabled independently.
+The history high row has one display control and a custom value format. Its placeholders cover age, decline, recovery, price, and date, and the format supports line breaks.
+
+Within their configured windows, the Earnings row shows the next report first. A report due later today appears as bold red `later today`. A report already released today appears as bold green `was today`. When no upcoming report qualifies, the row can show how many full days have passed since the most recent reported release. Each window can be disabled independently.
 
 Earnings, analyst targets, valuation data, company metadata, and mapped quotes depend on TradingView coverage and the user's data permissions.
 

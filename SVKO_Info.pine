@@ -267,6 +267,9 @@ formatAnalystTarget(float target, float currentPrice) =>
 formatDays(int value) =>
     na(value) ? "N/A" : str.tostring(value) + (value == 1 ? " day" : " days")
 
+isSameCalendarDay(int firstTime, int secondTime, string timezone) =>
+    not na(firstTime) and not na(secondTime) and year(firstTime, timezone) == year(secondTime, timezone) and month(firstTime, timezone) == month(secondTime, timezone) and dayofmonth(firstTime, timezone) == dayofmonth(secondTime, timezone)
+
 isAsciiLetter(string value) =>
     str.length(value) == 1 and str.contains("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", value)
 
@@ -398,7 +401,7 @@ dailyAtrPercentValue() =>
     close == 0 ? na : dailyAtr / close * 100
 
 latestReportedEarningsTime() =>
-    float reportedEarnings = request.earnings(syminfo.tickerid, earnings.actual, gaps = barmerge.gaps_on, ignore_invalid_symbol = true)
+    float reportedEarnings = request.earnings(syminfo.tickerid, earnings.actual, gaps = barmerge.gaps_on, lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true)
     var int latestTime = na
     if not na(reportedEarnings)
         latestTime := time
@@ -680,11 +683,17 @@ daysToEarnings := na(earningsTime) ? na : int(math.ceil((float(earningsTime) - f
 daysToEarnings := not na(daysToEarnings) and daysToEarnings >= 0 ? daysToEarnings : na
 daysSinceEarnings := na(pastEarningsTime) ? na : int(math.floor((float(timenow) - float(pastEarningsTime)) / 86400000.0))
 daysSinceEarnings := not na(daysSinceEarnings) and daysSinceEarnings >= 0 ? daysSinceEarnings : na
-bool showFutureEarningsRow = showEarningsWithinDays > 0 and not na(daysToEarnings) and daysToEarnings <= showEarningsWithinDays
+bool futureEarningsIsToday = isSameCalendarDay(earningsTime, timenow, earningsTimezone)
+bool pastEarningsIsToday = isSameCalendarDay(pastEarningsTime, timenow, earningsTimezone)
+bool showFutureEarningsRow = showEarningsWithinDays > 0 and not na(earningsTime) and earningsTime >= timenow and not na(daysToEarnings) and daysToEarnings <= showEarningsWithinDays
 bool showPastEarningsRow = not showFutureEarningsRow and showPastEarningsWithinDays > 0 and not na(daysSinceEarnings) and daysSinceEarnings <= showPastEarningsWithinDays
-bool showEarningsRow = showFutureEarningsRow or showPastEarningsRow
+bool showPastEarningsTodayFromSchedule = not showFutureEarningsRow and not showPastEarningsRow and showPastEarningsWithinDays > 0 and futureEarningsIsToday and earningsTime < timenow
+bool showEarningsRow = showFutureEarningsRow or showPastEarningsRow or showPastEarningsTodayFromSchedule
+bool showFutureEarningsToday = showFutureEarningsRow and futureEarningsIsToday
+bool showPastEarningsToday = showPastEarningsTodayFromSchedule or showPastEarningsRow and pastEarningsIsToday
 bool highlightEarningsRow = showFutureEarningsRow and daysToEarnings <= 10
-string earningsText = hasCalculationSymbol and showFutureEarningsRow ? formatEarnings(earningsTime, daysToEarnings, earningsTimezone, earningsFormat) : hasCalculationSymbol and showPastEarningsRow ? formatEarnings(pastEarningsTime, daysSinceEarnings, earningsTimezone, pastEarningsFormat) : ""
+color earningsTextColour = showPastEarningsToday ? color.lime : highlightEarningsRow ? color.red : color.white
+string earningsText = not hasCalculationSymbol ? "" : showFutureEarningsToday ? "later today" : showPastEarningsToday ? "was today" : showFutureEarningsRow ? formatEarnings(earningsTime, daysToEarnings, earningsTimezone, earningsFormat) : showPastEarningsRow ? formatEarnings(pastEarningsTime, daysSinceEarnings, earningsTimezone, pastEarningsFormat) : ""
 string performanceText = hasCalculationSymbol and showPerformanceRow ? formatPerformance(performanceFormat, performancePlaceholders, performanceStates, performanceStartCloses, calculationClose) : ""
 bool showRenderedPerformanceRow = showPerformanceRow and str.length(str.trim(performanceText)) > 0
 
@@ -757,8 +766,8 @@ if barstate.islast and hasCalculationSymbol
         table.cell(infoTable, 1, row, formatPercent(dailyAtrPercent), height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
         row += 1
     if hasCalculationSymbol and showEarningsRow
-        table.cell(infoTable, 0, row, "Earnings", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = highlightEarningsRow ? color.red : color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily, text_formatting = highlightEarningsRow ? text.format_bold : text.format_none)
-        table.cell(infoTable, 1, row, earningsText, height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = highlightEarningsRow ? color.red : color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily, text_formatting = highlightEarningsRow ? text.format_bold : text.format_none)
+        table.cell(infoTable, 0, row, "Earnings", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = earningsTextColour, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily, text_formatting = highlightEarningsRow or showPastEarningsToday ? text.format_bold : text.format_none)
+        table.cell(infoTable, 1, row, earningsText, height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = earningsTextColour, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily, text_formatting = highlightEarningsRow or showPastEarningsToday ? text.format_bold : text.format_none)
         row += 1
     if hasCalculationSymbol and showAnalystAverageTarget
         table.cell(infoTable, 0, row, "Analyst Avg", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
