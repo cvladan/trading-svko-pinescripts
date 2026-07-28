@@ -64,6 +64,6 @@ Original work by SVKO. Published open source under the Mozilla Public License 2.
 
 Earnings information will show a recent release when no upcoming report is shown. Settings control the recent earnings window and format.
 
-[b]23 July 2026[/b]
+[b]28 July 2026[/b]
 
-The history high row now uses one display control and a custom multiline format for its age, decline, recovery, price, and date.
+The history high row now has a custom multiline format. Extended Hours now uses broker chart prices on mapped CFD charts, and same day earnings appear in bold red before the report and bold green after it.
