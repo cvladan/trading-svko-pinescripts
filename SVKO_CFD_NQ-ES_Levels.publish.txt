@@ -60,3 +60,10 @@ Feed timing, spreads, currencies, sessions, instrument specifications, and data 
 █ [b]CREDITS AND LICENCE[/b]
 
 Original work by SVKO. Published open source under the Mozilla Public License 2.0.
+
+
+█ [b]PUBLIC RELEASE NOTES[/b]
+
+[b]28 July 2026[/b]
+
+The indicator can now use SVKO CFD Symbol Mapper as a fallback when the active session mapping has no match, with configurable broker prefixes and two Mapper code inputs.
