@@ -1,10 +1,13 @@
 //@version=6
 indicator("SVKO CFD NQ-ES Levels", shorttitle = "SVKO CFD NQ-ES Levels", overlay = true, max_lines_count = 21, max_boxes_count = 22)
 
+const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:._"
+const int BASE = 41
 const string DEFAULT_FUTURES_MAPPING_PAIRS = "IG:NASDAQ=CME_MINI:NQ1!\nTRADENATION:USTEC=CME_MINI:MNQ1!\nTRADENATIONSB:USTEC=CME_MINI:MNQ1!\nIG:SPTRD=CME_MINI:ES1!\nTRADENATION:US500=CME_MINI:ES1!\nTRADENATIONSB:US500=CME_MINI:ES1!"
 const string DEFAULT_MAIN_SESSION_MAPPING_PAIRS = "IG:NASDAQ=NASDAQ:QQQ\nTRADENATION:USTEC=NASDAQ:QQQ\nTRADENATIONSB:USTEC=NASDAQ:QQQ\nIG:SPTRD=AMEX:SPY\nTRADENATION:US500=AMEX:SPY\nTRADENATIONSB:US500=AMEX:SPY"
 
 groupMappings = "Mappings"
+groupSymbolMapper = "Use SVKO CFD Symbol Mapper"
 groupLevels = "Levels"
 groupPosition = "Position"
 groupZeroStyle = "Zero Level Style"
@@ -41,6 +44,9 @@ labelBackgroundColour = input.color(color.new(color.black, 100), "Background col
 zeroLineLength = input.int(400, "Zero line length (1m bars)", minval = 1, maxval = 500, tooltip = "Base length measured in 1-minute bars. It is automatically converted to chart bars on higher timeframes. The combined distance and zero line length are capped at 500 future bars.", group = groupPosition, display = display.data_window)
 currentPriceLabelFormat = input.string("<percent>", "Label format", tooltip = "Format the moving current-price label with <percent> and <price>. Leave this field empty to hide the label.", group = groupCurrentPrice, display = display.data_window)
 currentPriceLabelPosition = input.int(0, "Distance from candle (bars)", minval = -1, maxval = 494, tooltip = "Use 0 to left-align the label immediately after the latest candle, or a positive value to add empty chart bars. Use -1 to right-align it at the level-line end.", group = groupCurrentPrice, display = display.data_window)
+brokerExchangePrefixesInput = input.string("IG, TRADENATION, TRADENATIONSB", "Broker prefixes", tooltip = "When no active Mappings entry maps the current chart, the indicator uses the symbol decoded by SVKO CFD Symbol Mapper only if the chart prefix is listed here. Enter comma-separated prefixes. An active session mapping always takes priority. Default: IG, TRADENATION, TRADENATIONSB.", group = groupSymbolMapper, display = display.data_window)
+mapperCode1Source = input.source(close, "1st code", tooltip = "Used only when no active Mappings entry matches the current chart and its exchange prefix is listed in Broker prefixes. Add SVKO CFD Symbol Mapper to the same chart, then select Map: 1st code here. An active session mapping always takes priority.", group = groupSymbolMapper, display = display.data_window)
+mapperCode2Source = input.source(close, "2nd code", tooltip = "Select Map: 2nd code from the same SVKO CFD Symbol Mapper instance. Both codes must be configured. If either source is left on close or the Mapper has no match, the indicator remains empty and makes no fallback daily request.", group = groupSymbolMapper, display = display.data_window)
 
 lineStyle(string value) =>
     value == "Solid" ? line.style_solid : value == "Dashed" ? line.style_dashed : line.style_dotted
@@ -51,8 +57,29 @@ scaleOneMinuteBars(int oneMinuteBars) =>
     int scaledBars = int(math.round(float(oneMinuteBars) * 60.0 / effectiveChartSeconds))
     oneMinuteBars == 0 ? 0 : math.max(scaledBars, 1)
 
-isBrokerSymbol(string symbol) =>
-    str.pos(symbol, "TRADENATION:") == 0 or str.pos(symbol, "TRADENATIONSB:") == 0 or str.pos(symbol, "IG:") == 0
+decodeChunk(int code) =>
+    int value = code
+    string result = ""
+    bool valid = value >= 0
+    while value > 0 and valid
+        int digit = value % BASE
+        if digit == 0
+            valid := false
+        else
+            result := str.substring(ALPHABET, digit - 1, digit) + result
+            value := int(value / BASE)
+    valid ? result : "NO SYMBOL MAPPING"
+
+expandTransportSymbol(string symbol) =>
+    str.pos(symbol, "TNSB_") == 0 ? "TRADENATIONSB:" + str.substring(symbol, 5, str.length(symbol)) : str.pos(symbol, "TN_") == 0 ? "TRADENATION:" + str.substring(symbol, 3, str.length(symbol)) : symbol
+
+normaliseBrokerExchangePrefixes(string prefixes) =>
+    "," + str.upper(str.replace_all(prefixes, " ", "")) + ","
+
+isBrokerSymbol(string symbol, string brokerExchangePrefixes) =>
+    int separator = str.pos(symbol, ":")
+    string exchange = separator > 0 ? str.substring(symbol, 0, separator) : ""
+    separator > 0 and str.contains(brokerExchangePrefixes, "," + str.upper(exchange) + ",")
 
 compactSymbol(string rawSymbol) =>
     str.replace_all(rawSymbol, " ", "")
@@ -70,31 +97,8 @@ loadMappingPairs(map<string, string> mappings, string mappingPairs) =>
                 if sourceSymbol != "" and targetSymbol != ""
                     map.put(mappings, sourceSymbol, targetSymbol)
 
-findFirstSourceForTarget(map<string, string> mappings, string targetSymbol) =>
-    string result = ""
-    for [sourceSymbol, mappedTarget] in mappings
-        if result == "" and mappedTarget == targetSymbol
-            result := sourceSymbol
-    result
-
-findInverseMappedSymbol(map<string, string> mappings, string chartSymbol) =>
-    string result = ""
-    int separator = str.pos(chartSymbol, ":")
-    if not na(separator)
-        string prefix = str.substring(chartSymbol, 0, separator)
-        string tickerName = str.substring(chartSymbol, separator + 1, str.length(chartSymbol))
-        if prefix == "NASDAQ" or prefix == "NYSE" or prefix == "BATS"
-            result := findFirstSourceForTarget(mappings, "NASDAQ:" + tickerName)
-            if result == ""
-                result := findFirstSourceForTarget(mappings, "NYSE:" + tickerName)
-            if result == ""
-                result := findFirstSourceForTarget(mappings, "BATS:" + tickerName)
-        else
-            result := findFirstSourceForTarget(mappings, chartSymbol)
-    result
-
 findLocalMappedSymbol(map<string, string> mappings, string chartSymbol) =>
-    isBrokerSymbol(chartSymbol) and map.contains(mappings, chartSymbol) ? map.get(mappings, chartSymbol) : findInverseMappedSymbol(mappings, chartSymbol)
+    map.contains(mappings, chartSymbol) ? map.get(mappings, chartSymbol) : ""
 
 formatLevelPercent(float value) =>
     value == 0 ? "0%" : (value > 0 ? "+" : "") + str.tostring(value, "#.##") + "%"
@@ -104,7 +108,8 @@ formatLevelLabel(float levelPercent, float levelPrice, string template) =>
     str.replace_all(result, "<price>", str.tostring(levelPrice, format.mintick))
 
 chartSymbol = ticker.standard(syminfo.tickerid)
-isBrokerChart = isBrokerSymbol(chartSymbol)
+brokerExchangePrefixes = normaliseBrokerExchangePrefixes(brokerExchangePrefixesInput)
+mapperFallbackEligible = isBrokerSymbol(chartSymbol, brokerExchangePrefixes)
 
 var map<string, string> futuresMappings = map.new<string, string>()
 var map<string, string> mainSessionMappings = map.new<string, string>()
@@ -115,7 +120,17 @@ if barstate.isfirst
 
 bool isMainSession = not na(time(timeframe.period, mainSessionInput + ":23456", "America/New_York"))
 string activeMappedSymbol = findLocalMappedSymbol(isMainSession ? mainSessionMappings : futuresMappings, chartSymbol)
-calculationSymbol = isBrokerChart ? (activeMappedSymbol == "" ? "NO SYMBOL MAPPING" : activeMappedSymbol) : chartSymbol
+string fallbackMappedSymbol = ""
+if barstate.islast and mapperFallbackEligible and activeMappedSymbol == ""
+    bool mapperSourcesConfigured = mapperCode1Source != close and mapperCode2Source != close
+    int mapperCode1 = int(math.round(mapperCode1Source))
+    int mapperCode2 = int(math.round(mapperCode2Source))
+    string mappedSymbol = expandTransportSymbol(decodeChunk(mapperCode1) + decodeChunk(mapperCode2))
+    bool mapperHasNoMapping = mapperCode1 == 0 and mapperCode2 == 0
+    bool mapperSymbolIsValid = str.contains(mappedSymbol, ":") and not str.contains(mappedSymbol, "NO SYMBOL MAPPING")
+    if mapperSourcesConfigured and not mapperHasNoMapping and mapperSymbolIsValid
+        fallbackMappedSymbol := mappedSymbol
+calculationSymbol = activeMappedSymbol != "" ? activeMappedSymbol : mapperFallbackEligible ? (fallbackMappedSymbol != "" ? fallbackMappedSymbol : "NO SYMBOL MAPPING") : chartSymbol
 hasCalculationSymbol = str.contains(calculationSymbol, ":") and not str.contains(calculationSymbol, "NO SYMBOL MAPPING")
 
 varip float zeroLevel = na

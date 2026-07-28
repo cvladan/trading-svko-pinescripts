@@ -14,20 +14,23 @@ The optional current-price label remains live and shows the chart price's percen
 
 TradingView does not expose a watchlist Change % column to Pine. The indicator reproduces that value from the mapped symbol's current and previous daily closes, removes it from the current CFD price, and stores the resulting 0% basis.
 
-The first valid basis is held for the active mapping. It changes only when the session mapping changes, the indicator reloads, or its inputs change. This keeps the displayed levels fixed during each mapping period while the current-price label continues to move.
+The first valid basis is held for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or its inputs change. This keeps the displayed levels fixed during each calculation period while the current-price label continues to move.
 
 
 █ [b]MAPPING AND SESSIONS[/b]
 
 The indicator owns separate mapping lists for the configured weekday main session and for all other times. This allows an ETF reference during the main session and a futures reference outside it.
 
-Each mapping uses one complete TradingView source and target ticker pair per line. This indicator does not require SVKO CFD Symbol Mapper because its reference symbol changes with the session.
+Each mapping uses one complete TradingView source and target ticker pair per line. The active session mapping always has priority.
+
+When the active list has no match, the indicator can use SVKO CFD Symbol Mapper as a fallback on charts whose exchange prefix appears in [i]Broker prefixes[/i]. Connect [i]1st code[/i] to [i]Map: 1st code[/i] and [i]2nd code[/i] to [i]Map: 2nd code[/i] from the same Mapper instance. The decoded counterpart becomes one fallback calculation symbol for either session.
 
 
 █ [b]HOW TO USE[/b]
 
  • Add the indicator to a supported Nasdaq 100 or S&P 500 CFD chart.
  • Confirm that the chart symbol appears on the left side of both mapping lists.
+ • For symbols absent from the active list, set [i]Broker prefixes[/i], add SVKO CFD Symbol Mapper, and connect both code inputs.
  • Adjust the main session when your workflow uses different New York session hours.
  • Choose the percentage step and the number of levels above and below 0%.
  • Position and style the levels and current-price label beside the latest candle.
@@ -51,7 +54,7 @@ The reproduced percentage uses the mapped symbol's standard TradingView daily da
 
 The 0% basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
 
-Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and mapped symbol diverge. If the active mapping or daily data is unavailable, the indicator draws nothing.
+Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
 
 
 █ [b]CREDITS AND LICENCE[/b]

@@ -22,13 +22,13 @@ The optional current-price label remains live and shows the chart price's percen
 
 TradingView does not expose the watchlist Change % column directly to Pine. The indicator reproduces it from the mapped symbol's current daily close and previous daily close, removes that percentage move from the current CFD price, and stores the resulting `0%` basis.
 
-The first valid live basis is cached for the active mapping. It changes only when the main-session mapping state changes, the indicator reloads, or an input change causes a reload. This keeps all levels fixed during a mapping period while the current-price label continues to move.
+The first valid live basis is cached for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or an input change causes a reload. This keeps all levels fixed during a calculation period while the current-price label continues to move.
 
 The basis is not tick-rounded, so its initial percentage matches the mapped symbol's reproduced Change % without an additional rounding difference. The last confirmed historical bar does not commit the cache; the initial snapshot waits for the mapped symbol's current last-bar value.
 
 ### Mappings and sessions
 
-The indicator owns two independent mapping lists because the reference changes by session. It does not use or require SVKO CFD Symbol Mapper.
+The indicator owns two independent mapping lists because the reference changes by session. The active session mapping always has priority over the optional SVKO CFD Symbol Mapper fallback.
 
 The default weekday main session is `09:30-16:00` in `America/New_York`. During that session, the defaults use QQQ for Nasdaq 100 CFDs and SPY for S&P 500 CFDs:
 
@@ -54,6 +54,15 @@ TRADENATIONSB:US500 = CME_MINI:ES1!
 
 Each custom entry must use one complete TradingView source and target ticker pair per line. Native TradingView charts calculate from their own standard ticker; supported broker charts calculate from the active mapped target.
 
+When the active mapping list has no match, **Broker prefixes** limits which broker charts can use the counterpart symbol decoded by SVKO CFD Symbol Mapper. The default eligible prefixes are `IG`, `TRADENATION`, and `TRADENATIONSB`.
+
+Add the Mapper to the same chart and connect:
+
+- **1st code** to `Map: 1st code`;
+- **2nd code** to `Map: 2nd code` from the same Mapper instance.
+
+Both codes are required. If either input remains on `close`, the Mapper returns no mapping, or the decoded symbol is invalid, the indicator stays empty and makes no fallback daily request. The Mapper supplies one fallback calculation symbol for either session. Use the local lists whenever the main session and outside main session require different reference symbols.
+
 ### Position and display defaults
 
 The default distance from the latest candle is 50 one-minute bar equivalents. The `0%` line defaults to 400 one-minute bar equivalents, while other levels default to 200. On higher chart timeframes, these values are converted to fewer chart bars to preserve approximately the same elapsed-time spacing. The combined distance and each line length are capped at 500 future chart bars.
@@ -78,7 +87,7 @@ The reproduced percentage uses TradingView daily data rather than a direct watch
 
 The `0%` basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
 
-Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and mapped symbol diverge. If the active mapping or daily data is unavailable, the indicator draws nothing.
+Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
 
 ### Credits and licence
 
@@ -86,7 +95,7 @@ Original work by SVKO. Published open source under the Mozilla Public License 2.
 
 ## Chart preparation
 
-Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that leaves the 0% line, secondary levels, and current price label legible. Confirm that the active session mapping resolves and that no unrelated scripts, drawings, or images appear on the chart.
+Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that leaves the 0% line, secondary levels, and current price label legible. Confirm that the active session mapping resolves. When demonstrating the fallback, add SVKO CFD Symbol Mapper and connect both code inputs from the same instance. Remove unrelated scripts, drawings, and images from the chart.
 
 ## Publishing procedure
 
@@ -97,9 +106,11 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 
 ## Internal implementation notes
 
-- This indicator does not use SVKO CFD Symbol Mapper.
+- An active session mapping takes priority over the optional SVKO CFD Symbol Mapper fallback.
+- The Mapper fallback is limited by `Broker prefixes`, requires both code inputs from one Mapper instance, and makes no daily request when it cannot resolve a valid symbol.
+- The Mapper provides one fallback calculation symbol for either session.
 - It owns separate main session and outside main session mapping lists because the reference changes between QQQ or SPY and futures.
-- The 0% basis is stored in `varip` state after the first valid live last bar request for the active mapping.
+- The 0% basis is stored in `varip` state after the first valid live last bar request for the active calculation symbol.
 - The optional current price label remains live after the basis has been stored.
 
 ## Development history
@@ -119,6 +130,7 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 - Renamed the indicator and chart display name to `SVKO CFD NQ-ES Levels`.
 - Changed level distance and line length settings to one minute bar equivalents that scale down automatically on higher chart timeframes.
 - Added one current price positioning input. `0` places a left aligned label immediately after the latest candle, positive values add padding, and `-1` preserves the previous right aligned position.
+- Added an optional SVKO CFD Symbol Mapper fallback with configurable broker prefixes and two code inputs. Active session mappings retain priority, and unresolved fallback input remains silent without a daily request.
 
 ## Publication record
 
@@ -130,7 +142,7 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified
 - [ ] Exact saved script is available in the existing `SVKO Publish` layout
-- [ ] Both mapping lists resolve on the selected chart
+- [ ] Both mapping lists resolve on the selected chart, or the intended Mapper fallback is connected and verified
 - [ ] Main session and outside main session behaviour verified
 - [ ] Chart contains only necessary scripts, drawings, and images
 - [ ] Symbol, timeframe, name, levels, and current price label are clear
