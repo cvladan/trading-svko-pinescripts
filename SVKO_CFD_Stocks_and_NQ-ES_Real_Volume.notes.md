@@ -61,9 +61,9 @@ An explicit formula always takes priority over Mapper fallback. Invalid or ambig
 
 ### SVKO CFD Symbol Mapper fallback
 
-When no formula matches, charts with a configured broker exchange prefix can use SVKO CFD Symbol Mapper as a one-symbol source with weight `1`. The default eligible prefixes are `IG`, `TRADENATION`, and `TRADENATIONSB`.
+When no formula matches, **Broker prefixes** limits which broker charts can use the original symbol decoded by SVKO CFD Symbol Mapper as a one symbol source with weight `1`. The default eligible prefixes are `IG`, `TRADENATION`, and `TRADENATIONSB`.
 
-Add the Mapper to the same chart and connect:
+Set **Broker prefixes**, add the Mapper to the same chart, and connect:
 
 - **1st code** to `Map: 1st code`;
 - **2nd code** to `Map: 2nd code` from the same Mapper instance.
@@ -118,6 +118,7 @@ Use a clean supported CFD chart with clearly visible volume columns and Real VWA
 
 ## Development history
 
+- Renamed **Broker exchange prefixes** to **Broker prefixes**, moved it before the Mapper code inputs, and clarified that the fallback uses the Mapper's decoded original symbol only for listed chart prefixes.
 - Renamed the SVKO CFD Symbol Mapper fallback inputs to `1st code` and `2nd code` and updated their connection guidance.
 - Changed the volume display from visible range price overlay boxes to standard columns in a dedicated pane.
 - Added reusable symbol abbreviations and abbreviated default volume formulas, including direct MNQ and MES chart mappings.

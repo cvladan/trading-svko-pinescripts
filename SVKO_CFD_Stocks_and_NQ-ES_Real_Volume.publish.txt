@@ -27,7 +27,7 @@ External volume is displayed as standard up and down columns in a dedicated pane
 
 An explicit volume formula always has priority. This supports precise stock mappings, deliberately selected sources, and weighted index proxies.
 
-When no formula matches, supported broker charts can use SVKO CFD Symbol Mapper as a one-symbol fallback. Connect [i]1st code[/i] to [i]Map: 1st code[/i] and [i]2nd code[/i] to [i]Map: 2nd code[/i] from the same Mapper instance.
+When no formula matches, [i]Broker prefixes[/i] limits which broker charts can use the original symbol decoded by SVKO CFD Symbol Mapper. Connect [i]1st code[/i] to [i]Map: 1st code[/i] and [i]2nd code[/i] to [i]Map: 2nd code[/i] from the same Mapper instance.
 
 
 █ [b]HOW TO USE[/b]
@@ -35,7 +35,7 @@ When no formula matches, supported broker charts can use SVKO CFD Symbol Mapper 
  • Add the indicator to a standard time-based chart.
  • Check whether [i]Volume formulas[/i] already contains the chart symbol or one of its abbreviations.
  • Add or edit a formula when a specific source or weighted proxy is required.
- • Add SVKO CFD Symbol Mapper and connect both code inputs when the general stock-CFD fallback is required.
+ • Set [i]Broker prefixes[/i], add SVKO CFD Symbol Mapper, and connect both code inputs when the general stock CFD fallback is required.
  • Use TradingView's Style tab to configure the volume columns and Real VWAP.
  • Choose the session anchor used by Real VWAP.
 
