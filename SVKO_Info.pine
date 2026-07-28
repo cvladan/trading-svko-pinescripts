@@ -239,9 +239,16 @@ formatPerformance(string template, array<string> placeholders, array<int> states
             finished := true
     result
 
-formatExtendedHours(float currentChange, int currentSession, float previousPostmarketChange, float premarketChange, float postmarketChange) =>
-    string currentValue = formatPercent(currentChange)
-    currentSession == 1 ? currentValue + (na(previousPostmarketChange) ? " (Pre " + formatPercent(premarketChange) + ")" : " (Post " + formatPercent(previousPostmarketChange) + ", Pre " + formatPercent(premarketChange) + ")") : currentSession == 2 ? currentValue + " (Post " + formatPercent(postmarketChange) + ")" : currentValue
+formatExtendedHours(float totalChange, float postmarketChange, float premarketChange) =>
+    string result = formatPercent(totalChange)
+    if not na(totalChange)
+        if not na(postmarketChange) and not na(premarketChange)
+            result += " (Post " + formatPercent(postmarketChange) + ", Pre " + formatPercent(premarketChange) + ")"
+        else if not na(postmarketChange)
+            result += " (Post " + formatPercent(postmarketChange) + ")"
+        else if not na(premarketChange)
+            result += " (Pre " + formatPercent(premarketChange) + ")"
+    result
 
 formatNumber(float value) =>
     na(value) ? "N/A" : str.tostring(value, "#.##")
@@ -532,9 +539,8 @@ float analystAverageTarget = na
 float analystCurrentPrice = na
 float dailyAtrPercent = na
 float extendedHoursChange = na
-float premarketChange = na
-float postmarketChange = na
-float previousPostmarketChange = na
+float extendedPostmarketChange = na
+float extendedPremarketChange = na
 int extendedHoursSession = 0
 float premarketClose = na
 float postmarketClose = na
@@ -638,15 +644,18 @@ if barstate.islast and hasCalculationSymbol and hasEnabledMetric
         earningsTimezone := requestedEarningsTimezone
     if showExtendedHours
         string extendedTicker = ticker.modify(calculationSymbol, session = session.extended)
-        [requestedExtendedHoursSession, requestedPremarketClose, requestedPostmarketClose, requestedPreviousPostmarketClose] = request.security(extendedTicker, "D", latestExtendedHoursPrices(), lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 2)
+        [requestedExtendedHoursSession, requestedPremarketClose, requestedPostmarketClose, requestedPreviousPostmarketClose] = request.security(extendedTicker, "12M", latestExtendedHoursPrices(), lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 1)
         extendedHoursSession := requestedExtendedHoursSession
         premarketClose := requestedPremarketClose
         postmarketClose := requestedPostmarketClose
         previousPostmarketClose := requestedPreviousPostmarketClose
-        premarketChange := na(premarketClose) or na(calculationClose) or calculationClose == 0 ? na : (premarketClose / calculationClose - 1) * 100
-        postmarketChange := na(postmarketClose) or na(calculationClose) or calculationClose == 0 ? na : (postmarketClose / calculationClose - 1) * 100
-        previousPostmarketChange := na(previousPostmarketClose) or na(calculationClose) or calculationClose == 0 ? na : (previousPostmarketClose / calculationClose - 1) * 100
-        extendedHoursChange := extendedHoursSession == 1 ? premarketChange : extendedHoursSession == 2 ? postmarketChange : na
+        float extendedBaselinePrice = isBrokerChart ? close : calculationClose
+        float activePostmarketClose = extendedHoursSession == 1 ? previousPostmarketClose : extendedHoursSession == 2 ? postmarketClose : na
+        float activePremarketClose = extendedHoursSession == 1 ? premarketClose : na
+        float activeExtendedPrice = not na(activePremarketClose) ? activePremarketClose : activePostmarketClose
+        extendedPostmarketChange := na(activePostmarketClose) or na(extendedBaselinePrice) or extendedBaselinePrice == 0 ? na : (activePostmarketClose / extendedBaselinePrice - 1) * 100
+        extendedPremarketChange := na(activePremarketClose) or na(extendedBaselinePrice) or extendedBaselinePrice == 0 ? na : na(activePostmarketClose) or activePostmarketClose == 0 ? (activePremarketClose / extendedBaselinePrice - 1) * 100 : (activePremarketClose / activePostmarketClose - 1) * 100
+        extendedHoursChange := na(activeExtendedPrice) or na(extendedBaselinePrice) or extendedBaselinePrice == 0 ? na : (activeExtendedPrice / extendedBaselinePrice - 1) * 100
     if showPeRatios
         float epsTtm = request.financial(calculationSymbol, "EARNINGS_PER_SHARE", "TTM", ignore_invalid_symbol = true)
         forwardPeRatio := request.financial(calculationSymbol, "PRICE_EARNINGS_FORWARD", "FY", ignore_invalid_symbol = true)
@@ -662,7 +671,7 @@ bool primeMappedPriceContext = barstate.islastconfirmedhistory
 bool updateMappedPrice = barstate.islast and mappedPriceMarketStateAllowsDisplay
 if isBrokerChart and hasMappedSymbol and mappedPriceLineLength > 0 and (primeMappedPriceContext or updateMappedPrice)
     string mappedExtendedTicker = ticker.modify(mappedSymbol, session = session.extended)
-    [requestedMappedCurrentPrice, requestedMappedCurrentPriceText] = request.security(mappedExtendedTicker, "D", latestMappedPrice(), lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 2)
+    [requestedMappedCurrentPrice, requestedMappedCurrentPriceText] = request.security(mappedExtendedTicker, "12M", latestMappedPrice(), lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 1)
     if updateMappedPrice
         mappedCurrentPrice := requestedMappedCurrentPrice
         mappedCurrentPriceText := requestedMappedCurrentPriceText
@@ -737,7 +746,7 @@ if barstate.islast and hasCalculationSymbol
         row += 1
     if hasCalculationSymbol and showExtendedHours
         table.cell(infoTable, 0, row, "Extended Hours", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
-        table.cell(infoTable, 1, row, formatExtendedHours(extendedHoursChange, extendedHoursSession, previousPostmarketChange, premarketChange, postmarketChange), height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
+        table.cell(infoTable, 1, row, formatExtendedHours(extendedHoursChange, extendedPostmarketChange, extendedPremarketChange), height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_size = tableFontSize, text_font_family = tableFontFamily)
         row += 1
     if hasCalculationSymbol and showAllTimeHigh
         table.cell(infoTable, 0, row, str.tostring(historyWindowDays) + "d High", height = tableRowHeightPercent, bgcolor = liveTableBackgroundColour, text_color = color.white, text_halign = text.align_left, text_valign = text.align_top, text_size = tableFontSize, text_font_family = tableFontFamily)

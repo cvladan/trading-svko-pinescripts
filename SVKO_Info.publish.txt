@@ -35,7 +35,7 @@ Broker charts use the resolved native symbol for calculations. Native TradingVie
 
 Performance uses regular-session daily prices and supports rolling periods, calendar-based periods, and custom start dates. Periods outside the selected history window are omitted.
 
-Extended-hours data compares the active premarket or postmarket price with the most recent regular-session close. Daily ATR always uses daily data, regardless of the chart timeframe.
+On broker charts, Extended Hours compares the active native premarket or postmarket price with the broker chart price. During premarket, Post measures the move from the broker price to the preceding native postmarket close, while Pre measures the next move from that postmarket close to the active native premarket price. On native charts, the total retains the most recent regular-session close as its baseline. Daily ATR always uses daily data, regardless of the chart timeframe.
 
 Within their configured windows, the Earnings row shows the next report first. When no upcoming report qualifies, it can show how many full days have passed since the most recent reported release. Each window can be disabled independently.
 

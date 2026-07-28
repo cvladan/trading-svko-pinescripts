@@ -98,7 +98,7 @@ Other text remains literal. When the history high is unavailable, the value rema
 
 ### Market data and mapped price marker
 
-Extended-hours data compares the active premarket or postmarket price with the most recent regular-session close. The value follows the mapped symbol's trading day and is a current-display value rather than a historical signal. Daily ATR uses daily data regardless of the chart timeframe and defaults to a 14-day length.
+On broker charts, Extended Hours compares the active native premarket or postmarket price with the broker chart price. During postmarket, the total and Post component both measure the move from the broker price to the active native postmarket price. During premarket, Post measures the move from the broker price to the preceding native postmarket close, Pre measures the next move from that postmarket close to the active native premarket price, and the total measures the complete move from the broker price to the active native premarket price. The total is calculated directly from prices rather than by adding rounded component percentages. If the preceding postmarket close is unavailable, Pre uses the broker price as its baseline. On native charts, the total retains the most recent regular-session close as its baseline. The value follows the mapped symbol's trading day and is a current-display value rather than a historical signal. Daily ATR uses daily data regardless of the chart timeframe and defaults to a 14-day length.
 
 The optional mapped price marker places the mapped native symbol's latest available one-minute extended-session quote beside broker CFD candles. By default it:
 
@@ -198,7 +198,9 @@ Use a clean chart where the bottom right table is legible and the mapped price m
 - Changed symbol selection so broker charts calculate from their mapped native symbol, while native TradingView charts calculate directly from the chart symbol.
 - Added decoding for Mapper's compact Trade Nation transport prefixes.
 - Fixed extended hours values on chart symbols that stop trading before the mapped symbol by retrieving the mapped symbol's latest extended intrabar independently of the chart time axis.
+- Changed the latest extended-session request anchor so a symbol change can retrieve the current premarket after the broker chart stopped on the preceding trading day.
 - Changed extended hours detail to follow the mapped symbol's trading day and to use one common regular session baseline.
+- Changed broker-chart Extended Hours to compare the active native extended price with the broker chart price and to show consecutive Post and Pre components without double-counting their shared move.
 - Changed all table cells to use left aligned text consistently.
 - Expanded Mapper decoding to support digits, underscores, and dots.
 - Changed ATR to use daily timeframe data regardless of chart timeframe.
