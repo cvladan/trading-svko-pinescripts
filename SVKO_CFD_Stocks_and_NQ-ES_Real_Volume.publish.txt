@@ -57,3 +57,10 @@ This indicator does not define alert conditions.
 █ [b]CREDITS AND LICENCE[/b]
 
 Original work by SVKO. Published open source under the Mozilla Public License 2.0.
+
+
+█ [b]PUBLIC RELEASE NOTES[/b]
+
+[b]28 July 2026[/b]
+
+The Mapper fallback now uses a clearer Broker prefixes setting placed before the two code inputs, while explicit volume formulas continue to take priority.
