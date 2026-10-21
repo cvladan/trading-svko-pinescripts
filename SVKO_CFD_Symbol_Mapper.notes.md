@@ -58,7 +58,9 @@ The Mapper defines no alert conditions.
 
 ### Credits and licence
 
-Original work by SVKO. Published open source under the Mozilla Public License 2.0.
+Original work by SVKO. Open source + commercial licence under the SVKO Personal Use and Commercial Licence 1.0. Individuals may use and modify the script free of charge for personal use, including trading real money for their own profit. Company use, work for an employer or client, integration, redistribution, bundling and hosting as part of a business require a separate paid commercial agreement, even if the script is supplied free to clients. This is a source-available licence, not an OSI open-source licence.
+
+[Licence terms and commercial enquiries](https://trading.cvladan.com/licensing/).
 
 ## Chart preparation
 
@@ -84,6 +86,9 @@ Use a clean chart with SVKO CFD Symbol Mapper and one visible receiving indicato
 - Compatible receiving scripts currently include SVKO Info and SVKO CFD Stocks & NQ-ES Real Volume.
 
 ## Development history
+
+22 September 2026: the local source notice and licensing documentation were changed to SVKO Personal Use and Commercial Licence 1.0. Executable Pine code is unchanged. This records local preparation only; no TradingView cloud sync or publication update has been verified for this licensing change. Previously published MPL-2.0 permissions remain valid for the code they cover.
+
 
 - Changed the indicator name to `SVKO CFD Symbol Mapper` and its short title to `Map`.
 - Renamed the two transport plots to `1st code` and `2nd code`.
