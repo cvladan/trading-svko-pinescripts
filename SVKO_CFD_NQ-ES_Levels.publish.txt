@@ -5,7 +5,7 @@ SVKO CFD NQ-ES Levels translates the mapped underlying market's daily percentage
 
 █ [b]OVERVIEW[/b]
 
-The main level is 0%. It represents the chart price implied when the mapped symbol's standard daily Change % is zero. Configurable levels above and below that anchor show where the CFD price sits in percentage terms.
+The main level is 0%. It represents the chart price implied when the mapped symbol's standard daily Change % is zero. One flexible definition table controls the levels above and below that anchor, with a general default, exact chart symbol overrides, explicit values, ranges, and ATR based endpoints.
 
 The optional current-price label remains live and shows the chart price's percentage distance from the stored 0% basis.
 
@@ -14,14 +14,28 @@ The optional current-price label remains live and shows the chart price's percen
 
 TradingView does not expose a watchlist Change % column to Pine. The indicator reproduces that value from the mapped symbol's current and previous daily closes, removes it from the current CFD price, and stores the resulting 0% basis.
 
-The first valid basis is held for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or its inputs change. This keeps the displayed levels fixed during each calculation period while the current-price label continues to move.
+The first valid basis is held for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or its inputs change. This keeps the displayed levels fixed during each calculation period while the current price label continues to move.
+
+ATR expressions use the last confirmed daily ATR(14) of the chart symbol, not a mapped source. The indicator converts ATR to a percentage of the cached 0% basis and rounds each ATR endpoint outwards to the selected step.
 
 
-█ [b]MAPPING AND SESSIONS[/b]
+█ [b]LEVEL DEFINITIONS[/b]
+
+The first settings group contains one [i]Level definitions[/i] text area. It requires one DEFAULT row and accepts optional exact chart symbol overrides:
+
+    DEFAULT = -ATR/2 to ATR step 1
+    TRADENATION:NFLX = 2, 1.5, 1, 0, -1, -2, -3
+
+Each value can combine comma separated percentages and ranges. A range uses START to END and an optional step SIZE. The default step is 1, and ranges can ascend or descend. ATR expressions can use ATR, +ATR, or -ATR, optionally followed immediately by / and a positive number, then by an optional percentage-point adjustment. Examples include ATR/2, -ATR/2, ATR/3.5+1, and -ATR/2-0.5. Division is applied to ATR before the leading sign and final adjustment. Parentheses, multiplication, and other arithmetic are not supported. A comma before step is optional.
+
+An exact chart symbol entry replaces DEFAULT for that chart. The 0% level is always added, duplicates are removed, results are sorted, and the active definition is limited to 50 unique levels. Invalid active syntax draws no partial set and displays a compact error.
+
+
+█ [b]SOURCE MAPPINGS AND SESSIONS[/b]
 
 The indicator owns separate mapping lists for the configured weekday main session and for all other times. This allows an ETF reference during the main session and a futures reference outside it.
 
-Each mapping uses one complete TradingView source and target ticker pair per line. The active session mapping always has priority.
+The [i]Source mappings[/i] group contains [i]Outside main session[/i], [i]During main session[/i], and the existing [i]Main session[/i] time control. Each mapping uses one complete TradingView source and target ticker pair per line. The active session mapping always has priority.
 
 When the active list has no match, the indicator can use SVKO CFD Symbol Mapper as a fallback on charts whose exchange prefix appears in [i]Broker prefixes[/i]. Connect [i]1st code[/i] to [i]Map: 1st code[/i] and [i]2nd code[/i] to [i]Map: 2nd code[/i] from the same Mapper instance. The decoded counterpart becomes one fallback calculation symbol for either session.
 
@@ -29,11 +43,11 @@ When the active list has no match, the indicator can use SVKO CFD Symbol Mapper 
 █ [b]HOW TO USE[/b]
 
  • Add the indicator to a supported Nasdaq 100 or S&P 500 CFD chart.
+ • Define DEFAULT and any exact chart symbol overrides in [i]Level definitions[/i].
  • Confirm that the chart symbol appears on the left side of both mapping lists.
  • For symbols absent from the active list, set [i]Broker prefixes[/i], add SVKO CFD Symbol Mapper, and connect both code inputs.
  • Adjust the main session when your workflow uses different New York session hours.
- • Choose the percentage step and the number of levels above and below 0%.
- • Position and style the levels and current-price label beside the latest candle.
+ • Position and style the levels and current price label beside the latest candle.
 
 
 █ [b]POSITION AND DISPLAY[/b]
@@ -55,6 +69,8 @@ The reproduced percentage uses the mapped symbol's standard TradingView daily da
 The 0% basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
 
 Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
+
+ATR ranges use the last confirmed daily ATR rather than the developing current daily ATR. They stay stable during the day but do not include volatility added by the unfinished daily bar. ATR divisors must be positive. The active definition is limited to 50 unique levels.
 
 
 █ [b]CREDITS AND LICENCE[/b]

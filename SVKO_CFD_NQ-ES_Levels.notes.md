@@ -6,15 +6,77 @@
 
 SVKO CFD NQ-ES Levels translates the mapped underlying market's daily percentage change into price levels on Nasdaq 100 and S&P 500 CFD charts. It makes the mapped move visible directly on the CFD chart without manual conversion.
 
-The central `0%` level is the CFD price implied when the mapped symbol's standard daily Change % is zero. With the default 0.5% step and two levels on either side, the displayed set is:
+The central `0%` level is the CFD price implied when the mapped symbol's standard daily Change % is zero. The `0%` level is always present. A flexible definition table controls every additional percentage level, including exact chart symbol overrides and ranges derived from the chart symbol's ATR.
+
+### Level definitions
+
+**Level definitions** is the first settings group. It contains one text area with a required `DEFAULT` definition and any number of optional exact chart symbol overrides. The default input is:
 
 ```text
--1.0%
--0.5%
- 0.0%
-+0.5%
-+1.0%
+DEFAULT = -ATR/2 to ATR step 1
 ```
+
+The complete table can combine a general default with symbol specific definitions:
+
+```text
+DEFAULT = -ATR/2 to ATR step 1
+TRADENATION:NFLX = 2, 1.5, 1, 0, -1, -2, -3
+NASDAQ:NVDA = -ATR to ATR step 0.5
+TRADENATION:USTEC = -ATR/2 to ATR+1, step 0.5
+```
+
+The indicator compares override keys with the complete standard chart ticker ID. An exact chart symbol match replaces the whole `DEFAULT` level definition. The mapped calculation symbol does not affect this lookup. When no exact override exists, the indicator uses `DEFAULT`. The `DEFAULT` keyword and syntax keywords are not case sensitive. When the same key appears more than once, the last entry wins.
+
+Each definition can combine comma separated percentages and ranges:
+
+```text
+2, 1.5, 1, 0, -2, -2.5
+3 to -4
+3 to -4 step 0.5
+-1 to 0.5 step 0.5, 1.5, 3, 3.5, 5 to 7
+```
+
+A range uses `START to END` and can run upwards or downwards. Its default step is `1`. Add `step SIZE` to use another positive interval. The optional comma before `step` is accepted, so both of these forms are valid:
+
+```text
+-ATR to ATR+1 step 0.5
+-ATR to ATR+1, step 0.5
+```
+
+Range endpoints must align with the selected step after ATR resolution. Use decimal points because commas separate definition items. The indicator automatically adds `0%`, removes duplicate values, sorts the final percentages, and accepts up to 50 unique levels. A malformed active definition displays one compact error message and draws no partial level set.
+
+### ATR based ranges
+
+`ATR` means the last confirmed daily `ATR(14)` of the chart symbol. It never uses either session source mapping or SVKO CFD Symbol Mapper. This keeps the volatility measurement tied to the instrument visible on the chart.
+
+The indicator converts the price based ATR into a percentage of the cached `0%` basis:
+
+```text
+ATR percentage = confirmed daily ATR(14) / cached 0% basis × 100
+```
+
+The result is stored with the level set. It does not expand and contract during the current daily bar. Expressions can use `ATR`, `+ATR`, or `-ATR`. An optional `/N` can immediately follow `ATR`, where `N` is any positive integer or decimal divisor. An optional signed number after that adds or subtracts percentage points. For example:
+
+```text
+ATR/2
+-ATR/2
++ATR/3.5
+ATR/2+1
+-ATR/2-0.5
+```
+
+Division is applied to ATR first, followed by the leading sign and then the percentage-point adjustment. Therefore, `-ATR/2+1` means `-(ATR / 2) + 1`. A zero or negative divisor is invalid. Parentheses, multiplication, chained division, and other general arithmetic are not supported.
+
+ATR endpoints are rounded away from zero to the range step. This guarantees that the outer level covers at least the requested ATR expression. For example, if the converted ATR is `1.23%`, the default lower endpoint is `-0.615%` before rounding and the upper endpoint is `+1.23%`. With a step of `1`, the default definition resolves as follows:
+
+```text
+-1%
+ 0%
++1%
++2%
+```
+
+In the same example, `-ATR to ATR+1, step 0.5` resolves its outer endpoints to `-1.5%` and `+2.5%`.
 
 The optional current-price label remains live and shows the chart price's percentage distance from the stored `0%` basis.
 
@@ -26,9 +88,11 @@ The first valid live basis is cached for the active calculation symbol. It chang
 
 The basis is not tick-rounded, so its initial percentage matches the mapped symbol's reproduced Change % without an additional rounding difference. The last confirmed historical bar does not commit the cache; the initial snapshot waits for the mapped symbol's current last-bar value.
 
-### Mappings and sessions
+The indicator parses the definition table once when the script loads and resolves its percentage set when the `0%` basis changes. It creates reusable line and text objects instead of deleting and recreating them. Pine rolls back drawing changes before each new execution on an open realtime bar, so the indicator must reapply the fixed object coordinates on every realtime update. The percentage definition and ATR boundary are not reparsed on those updates. The moving current price label also follows every realtime price update. An active definition without `ATR` makes no ATR request.
 
-The indicator owns two independent mapping lists because the reference changes by session. The active session mapping always has priority over the optional SVKO CFD Symbol Mapper fallback.
+### Source mappings and sessions
+
+The **Source mappings** group owns two independent mapping lists because the reference changes by session. The fields are named **Outside main session** and **During main session**. The existing **Main session** control remains in the same group. The active session source mapping always has priority over the optional SVKO CFD Symbol Mapper fallback.
 
 The default weekday main session is `09:30-16:00` in `America/New_York`. During that session, the defaults use QQQ for Nasdaq 100 CFDs and SPY for S&P 500 CFDs:
 
@@ -89,6 +153,8 @@ The `0%` basis is a live snapshot. Reloading at another time can produce a diffe
 
 Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
 
+ATR ranges use the last confirmed daily ATR rather than the developing current daily ATR. They therefore remain stable during the day but do not reflect volatility added by the current unfinished daily bar. ATR divisors must be positive. The active definition is limited to 50 unique levels. Invalid syntax, an unavailable required ATR value, or a range whose endpoints do not align with its step produces a visible configuration error and no partial levels.
+
 ### Credits and licence
 
 Original work by SVKO. Open source + commercial licence under the SVKO Personal Use and Commercial Licence 1.0. Individuals may use and modify the script free of charge for personal use, including trading real money for their own profit. Company use, work for an employer or client, integration, redistribution, bundling and hosting as part of a business require a separate paid commercial agreement, even if the script is supplied free to clients. This is a source-available licence, not an OSI open-source licence.
@@ -108,6 +174,11 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 
 ## Internal implementation notes
 
+- `Level definitions` is the first input. Its exact chart symbol overrides are independent of both session source mappings and Mapper fallback.
+- `DEFAULT` is required, `0%` is inserted before parsing, and the final unique values are sorted in ascending order.
+- The confirmed daily ATR request runs only when the active chart symbol definition contains `ATR`.
+- ATR endpoints are rounded away from zero on the active range step after conversion against the cached `0%` basis.
+- Level percentages and ATR boundaries persist across realtime updates. Existing line and box objects are reused, while their coordinates are reapplied on each realtime execution because Pine rolls drawing changes back between open bar updates.
 - An active session mapping takes priority over the optional SVKO CFD Symbol Mapper fallback.
 - The Mapper fallback is limited by `Broker prefixes`, requires both code inputs from one Mapper instance, and makes no daily request when it cannot resolve a valid symbol.
 - The Mapper provides one fallback calculation symbol for either session.
@@ -136,6 +207,8 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 - Changed level distance and line length settings to one minute bar equivalents that scale down automatically on higher chart timeframes.
 - Added one current price positioning input. `0` places a left aligned label immediately after the latest candle, positive values add padding, and `-1` preserves the previous right aligned position.
 - Added an optional SVKO CFD Symbol Mapper fallback with configurable broker prefixes and two code inputs. Active session mappings retain priority, and unresolved fallback input remains silent without a daily request.
+- Replaced the fixed step and level count controls with one `Level definitions` table that supports `DEFAULT`, exact chart symbol overrides, explicit values, ascending or descending ranges, optional steps, and chart symbol daily ATR expressions. Moved `Levels` to the first settings group, renamed `Mappings` to `Source mappings`, shortened its two mapping field names, raised the level capacity to 50, added clear configuration errors, cached the resolved percentage set, and retained reusable drawing objects with rollback safe realtime updates.
+- Added an optional positive divisor directly after `ATR`, documented its evaluation order and limits, and changed the default to `DEFAULT = -ATR/2 to ATR step 1`.
 
 ## Publication record
 
@@ -144,10 +217,12 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 
 ## Pre-publish checklist
 
-- [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
-- [ ] Cloud source re-fetched and verified
-- [ ] Exact saved script is available in the existing `SVKO Publish` layout
+- [x] Pine source compiled and validated through the repo-local TradingView Pine sync skill
+- [x] Cloud source re-fetched and verified
+- [x] Exact saved script is available in the existing `SVKO Publish` layout
 - [ ] Both mapping lists resolve on the selected chart, or the intended Mapper fallback is connected and verified
+- [ ] `Level definitions` default, exact chart symbol override, explicit list, mixed ranges, ATR division, ATR rounding, duplicate removal, and invalid syntax verified
+- [x] Existing inputs and Mapper source bindings migrated from the previous stable input IDs without unintended resets
 - [ ] Main session and outside main session behaviour verified
 - [ ] Chart contains only necessary scripts, drawings, and images
 - [ ] Symbol, timeframe, name, levels, and current price label are clear
