@@ -84,11 +84,11 @@ The optional current-price label remains live and shows the chart price's percen
 
 ### Calculation and snapshot behaviour
 
-TradingView does not expose the watchlist Change % column directly to Pine. The indicator reproduces it from the mapped symbol's current daily close and previous daily close, removes that percentage move from the current CFD price, and stores the resulting `0%` basis.
+TradingView does not expose the watchlist Change % column directly to Pine. When the calculation symbol differs from the chart symbol, the indicator reproduces its daily change from the current and previous daily closes, removes that percentage move from the current CFD price, and stores the resulting `0%` basis. When both symbols are identical, it uses the previous daily close directly, avoiding a price conversion between independently updating chart and daily feeds.
 
-The first valid live basis is cached for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or an input change causes a reload. This keeps all levels fixed during a calculation period while the current-price label continues to move.
+The first valid basis is cached for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or an input change causes a reload. This keeps all levels fixed during a calculation period while the current-price label continues to move.
 
-The basis is not tick-rounded, so its initial percentage matches the mapped symbol's reproduced Change % without an additional rounding difference. The last confirmed historical bar does not commit the cache; the initial snapshot waits for the mapped symbol's current last-bar value.
+The basis is not tick rounded, so its initial percentage matches the mapped symbol's reproduced Change % without an additional rounding difference. On intraday charts, the previous daily timestamp returned with the price pair must match a separate confirmed `time[1]` request using `barmerge.lookahead_on`. This rejects an older price pair exposed during initial historical calculation, including when the ATR request makes additional daily history available. The indicator retries until the periods match. A completed daily pair on a closed market can initialise the basis without a new live tick. Daily and higher chart intervals retain their existing daily sampling behaviour.
 
 The indicator parses the definition table once when the script loads and resolves its percentage set when the `0%` basis changes. It creates reusable line and text objects instead of deleting and recreating them. Pine rolls back drawing changes before each new execution on an open realtime bar, so the indicator must reapply the fixed object coordinates on every realtime update. The percentage definition and ATR boundary are not reparsed on those updates. The moving current price label also follows every realtime price update. An active definition without `ATR` makes no ATR request.
 
@@ -175,7 +175,7 @@ The indicator defines no alert conditions.
 
 The reproduced percentage uses TradingView daily data rather than a direct watchlist read. Futures daily closes can inherit settlement behaviour from TradingView's ticker settings.
 
-The `0%` basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
+A converted `0%` basis is a snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. An identical chart and calculation symbol uses its previous daily close directly. No future data is used. While the initial daily price pair is unavailable or belongs to an older period, the indicator remains empty and retries. Once accepted, the basis retains the existing cache lifetime and does not reset automatically at a new trading day.
 
 Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
 
@@ -213,10 +213,12 @@ Run the publication preflight and verify the matching website guide before submi
 - The Mapper fallback is limited by `Broker prefixes`, requires both code inputs from one Mapper instance, and makes no daily request when it cannot resolve a valid symbol.
 - The Mapper provides one fallback calculation symbol for either session.
 - It owns separate main session and outside main session mapping lists because the reference changes between QQQ or SPY and futures.
-- The 0% basis is stored in `varip` state after the first valid live last bar request for the active calculation symbol.
+- The 0% basis is stored in `varip` state after the first valid last bar request for the active calculation symbol.
 - The optional current price label remains live after the basis has been stored.
 
 ## Development history
+
+22 October 2026: prevented intraday initialisation from caching an older daily price pair when ATR has loaded additional history for the same symbol. The pair's previous daily timestamp must match a confirmed reference timestamp before the basis is accepted. Identical chart and calculation symbols now use the previous daily close directly to avoid differences caused by independently updating feeds. Mapping priority, inputs, source bindings and cache lifetime are unchanged. Compilation passed with no errors or warnings. Isolated runtime checks passed on SPCX with and without ATR, a USTEC to QQQ mapping, and a closed TSE stock. Cloud source version 30.0 matched the local file, and the existing TN Stocks instance was updated in place with its inputs, Mapper bindings and visibility preserved. Live SPCX verification showed a 159.31 basis and a matching current percentage. No public publication update was submitted.
 
 22 October 2026: updated the existing public TradingView publication to public version 3 using saved source version 29.0. The public source was fetched and verified against the local file. The dated release note and matching website guide link were verified, with Public visibility and Open source access retained. The existing published chart content and locked original description were unchanged. The original description remains a historical record; the new release note records the current licence notice and links to the current guide. Existing instances in the SVKO Publish layout were updated through the native version updater without adding or removing studies. The old step and count inputs were converted to the equivalent DEFAULT range of -1 to 1 step 0.5, and the three position inputs use the approved interval presets. Other inputs and source bindings were preserved.
 

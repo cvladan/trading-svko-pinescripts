@@ -375,11 +375,15 @@ varip array<float> levelPercents = array.new<float>()
 
 bool shouldLoadZeroLevel = barstate.islast and hasCalculationSymbol and (na(zeroLevel) or cachedCalculationSymbol != calculationSymbol)
 if shouldLoadZeroLevel
-    [referenceCurrentClose, referencePreviousClose] = request.security(calculationSymbol, "D", [close, close[1]], ignore_invalid_symbol = true, calc_bars_count = 2)
+    [referenceCurrentClose, referencePreviousClose, referencePreviousTime] = request.security(calculationSymbol, "D", [close, close[1], time[1]], ignore_invalid_symbol = true, calc_bars_count = 2)
+    // Shared ATR history can expose yesterday's daily pair on the initial historical bar.
+    int expectedPreviousTime = timeframe.isintraday ? request.security(calculationSymbol, "D", time[1], lookahead = barmerge.lookahead_on, ignore_invalid_symbol = true, calc_bars_count = 2) : referencePreviousTime
+    bool referencePeriodMatches = not na(referencePreviousTime) and referencePreviousTime == expectedPreviousTime
     float referenceChangePercent = na(referenceCurrentClose) or na(referencePreviousClose) or referencePreviousClose == 0 ? na : (referenceCurrentClose / referencePreviousClose - 1) * 100
     float changeMultiplier = na(referenceChangePercent) ? na : 1 + referenceChangePercent / 100
-    float calculatedZeroLevel = na(changeMultiplier) or changeMultiplier == 0 ? na : close / changeMultiplier
-    if not na(calculatedZeroLevel)
+    // The same instrument needs no price conversion between independently updating feeds.
+    float calculatedZeroLevel = calculationSymbol == chartSymbol ? referencePreviousClose : na(changeMultiplier) or changeMultiplier == 0 ? na : close / changeMultiplier
+    if referencePeriodMatches and not na(calculatedZeroLevel)
         zeroLevel := calculatedZeroLevel
         cachedCalculationSymbol := calculationSymbol
         cachedResolutionMethod := activeMappedSymbol != "" ? (isMainSession ? "Main session mapping" : "Outside main session mapping") : mapperFallbackEligible ? "indicator SVKO CFD Symbol Mapper" : "Chart symbol"

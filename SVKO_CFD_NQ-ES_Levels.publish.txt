@@ -14,7 +14,9 @@ Hover over the current price label to see the full instrument symbol and how it 
 
 █ [b]HOW IT WORKS[/b]
 
-TradingView does not expose a watchlist Change % column to Pine. The indicator reproduces that value from the mapped symbol's current and previous daily closes, removes it from the current CFD price, and stores the resulting 0% basis.
+TradingView does not expose a watchlist Change % column to Pine. For a different mapped instrument, the indicator reproduces that value from its current and previous daily closes, removes it from the current CFD price, and stores the resulting 0% basis. When the calculation symbol is the chart symbol itself, the previous daily close supplies the basis directly.
+
+On intraday charts, the daily prices must belong to the expected period before the initial basis is stored. This prevents older daily data from setting the basis during loading. Valid completed daily data can initialise the display while the market is closed.
 
 The first valid basis is held for the active calculation symbol. It changes only when that symbol changes, the indicator reloads, or its inputs change. This keeps the displayed levels fixed during each calculation period while the current price label continues to move.
 
@@ -76,7 +78,7 @@ This indicator does not define alert conditions.
 
 The reproduced percentage uses the mapped symbol's standard TradingView daily data and is not a direct watchlist read. Futures daily closes can inherit settlement behaviour from TradingView's ticker settings.
 
-The 0% basis is a live snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. No future data is used.
+A converted 0% basis is a snapshot. Reloading at another time can produce a different basis, and historical bars cannot reproduce the exact time of an earlier live snapshot. When the chart and calculation symbols are identical, the basis is the previous daily close. The initial display waits until daily data belongs to the expected period. No future data is used.
 
 Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
 
@@ -104,3 +106,7 @@ The indicator can now use SVKO CFD Symbol Mapper as a fallback when the active s
 [b]22 October 2026[/b]
 
 Level definitions now support custom percentages, ranges, symbol overrides and ATR expressions with divisors. Hover over the current percentage to see the reference instrument and how it was resolved. Distance and line lengths can be set by chart interval, with interpolation between entries and extrapolation beyond them. The source also includes the SVKO Personal Use and Commercial Licence 1.0 notice. Personal use remains free; business use requires a separate commercial licence. Existing permissions for earlier MPL 2.0 versions remain valid. [url=https://trading.cvladan.com/tools/cfd-levels/]Read the indicator guide and setup instructions[/url].
+
+[b]22 October 2026[/b]
+
+Fixed incorrect percentage levels when loading charts with ATR enabled.
