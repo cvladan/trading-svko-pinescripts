@@ -2,6 +2,8 @@
 
 ## Detailed user documentation
 
+[Read the indicator guide and setup instructions](https://trading.cvladan.com/tools/symbol-mapper/).
+
 ### Purpose
 
 SVKO CFD Symbol Mapper resolves broker CFD tickers to their native TradingView symbols and performs reverse lookups for compatible indicators. It provides one shared mapping source instead of requiring every receiving script to carry the same mapping table.
@@ -68,6 +70,8 @@ Use a clean chart with SVKO CFD Symbol Mapper and one visible receiving indicato
 
 ## Publishing procedure
 
+Run the publication preflight and verify the matching website guide before submission. The website link added locally on 21 October 2026 is prepared text, not a verified change to the existing TradingView description. If that description is locked, include the guide link in the next authorised update note without rewriting earlier release notes.
+
 1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
 2. Use the existing `SVKO Publish` chart as the publication image without repeating indicator tests.
 3. Publish directly with Privacy set to Public and Access set to Open-source using the exact TradingView-formatted description from `SVKO_CFD_Symbol_Mapper.publish.txt` after explicit action-time confirmation.
@@ -107,6 +111,9 @@ Use a clean chart with SVKO CFD Symbol Mapper and one visible receiving indicato
 - Expanded encoding to support digits and underscores in mapped symbols.
 
 ## Pre-publish checklist
+
+- [ ] Publication preflight confirms the matching website guide link in the public description and detailed documentation
+- [ ] Website guide opens successfully and identifies this indicator
 
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified
