@@ -55,3 +55,10 @@ The receiving indicator is responsible for requesting and interpreting data from
 Original work by SVKO. Open source + commercial licence under the SVKO Personal Use and Commercial Licence 1.0. Individuals may use and modify the script free of charge for personal use, including trading real money for their own profit. Company use, work for an employer or client, integration, redistribution, bundling and hosting as part of a business require a separate paid commercial agreement, even if the script is supplied free to clients. This is a source-available licence, not an OSI open-source licence.
 
 [url=https://trading.cvladan.com/licensing/]Licence terms and commercial enquiries[/url].
+
+
+█ [b]PUBLIC RELEASE NOTES[/b]
+
+[b]22 October 2026[/b]
+
+The source now includes the SVKO Personal Use and Commercial Licence 1.0 notice. Symbol mappings and encoded outputs are unchanged. Personal use remains free; business use requires a separate commercial licence. Existing permissions for earlier MPL 2.0 versions remain valid. [url=https://trading.cvladan.com/tools/symbol-mapper/]Read the indicator guide and setup instructions[/url].
