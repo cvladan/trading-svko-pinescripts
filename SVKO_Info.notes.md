@@ -143,6 +143,8 @@ Use a clean chart where the bottom right table is legible and the mapped price m
 
 ## Publishing procedure
 
+For the 22 October 2026 update, retain the existing published chart image. The user authorised updating all previously published indicators listed on the website without further questions.
+
 Run the publication preflight and verify the matching website guide before submission. The website link added locally on 21 October 2026 is prepared text, not a verified change to the existing TradingView description. If that description is locked, include the guide link in the next authorised update note without rewriting earlier release notes.
 
 1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
@@ -165,6 +167,8 @@ Run the publication preflight and verify the matching website guide before submi
 - Input changes are migration sensitive because existing Mapper plot bindings must be preserved.
 
 ## Development history
+
+22 October 2026: updated the existing public TradingView publication to public version 4 using saved source version 106.0. The public source was fetched and verified against the local file. The dated release note and matching website guide link were verified, with Public visibility and Open source access retained. The existing published chart content and locked original description were unchanged. The original description remains a historical record; the new release note records the current licence notice and links to the current guide. Existing instances in the SVKO Publish layout were updated through the native version updater without adding or removing studies. Both existing Info instances were preserved. The older instance's disabled history high price and date option was converted to the equivalent format without those details, retaining its Mapper links. Compilation passed with eight existing consistency warnings in the unchanged conditional calculation code.
 
 22 September 2026: the local source notice and licensing documentation were changed to SVKO Personal Use and Commercial Licence 1.0. Executable Pine code is unchanged. This records local preparation only; no TradingView cloud sync or publication update has been verified for this licensing change. Previously published MPL-2.0 permissions remain valid for the code they cover.
 
@@ -227,8 +231,8 @@ Run the publication preflight and verify the matching website guide before submi
 
 ## Pre-publish checklist
 
-- [ ] Publication preflight confirms the matching website guide link in the public description and detailed documentation
-- [ ] Website guide opens successfully and identifies this indicator
+- [x] Publication preflight confirms the matching website guide link in the public description and detailed documentation
+- [x] Website guide opens successfully and identifies this indicator
 
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified

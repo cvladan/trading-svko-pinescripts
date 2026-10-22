@@ -74,3 +74,7 @@ Earnings information will show a recent release when no upcoming report is shown
 [b]28 July 2026[/b]
 
 The history high row now has a custom multiline format. Extended Hours now uses broker chart prices on mapped CFD charts, and same day earnings appear in bold red before the report and bold green after it.
+
+[b]22 October 2026[/b]
+
+The source now includes the SVKO Personal Use and Commercial Licence 1.0 notice. Calculations, display and settings are unchanged. Personal use remains free; business use requires a separate commercial licence. Existing permissions for earlier MPL 2.0 versions remain valid. [url=https://trading.cvladan.com/tools/info/]Read the indicator guide and setup instructions[/url].
