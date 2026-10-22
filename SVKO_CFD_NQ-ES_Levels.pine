@@ -5,13 +5,14 @@
 // Company, employment and other business use requires a separate paid licence.
 // Terms: https://trading.cvladan.com/licences/SVKO-1.0.txt
 // Third-party material retains its own licence.
-indicator("SVKO CFD NQ-ES Levels", shorttitle = "SVKO CFD NQ-ES Levels", overlay = true, max_lines_count = 50, max_boxes_count = 51)
+indicator("SVKO CFD NQ-ES Levels", shorttitle = "SVKO CFD NQ-ES Levels", overlay = true, max_lines_count = 50, max_boxes_count = 50, max_labels_count = 1)
 
 const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:._"
 const int BASE = 41
 const int ATR_LENGTH = 14
 const int MAX_LEVEL_COUNT = 50
 const string DEFAULT_LEVEL_DEFINITIONS = "DEFAULT = -ATR/2 to ATR step 1"
+const string POSITION_PRESETS_TOOLTIP = "Enter comma-separated interval = value pairs, for example: 1m = 5, 5m = 300. Values are measured in one-minute bar equivalents, not pixels or bars of the selected interval. For example, 5m = 300 becomes 60 bars on a five-minute chart. Supported units: s, m, min, h, d, w and mo. Use mo for months. Spaces and letter case are ignored. Intervals must be positive whole numbers; values must be non-negative numbers with decimal points. Equivalent intervals such as 60m and 1h cannot appear twice.\n\nAt a listed interval, its exact value is used. Between intervals, values are interpolated linearly by interval duration. Outside the listed range, the nearest two points are used to extrapolate along the same straight line. A single pair supplies a constant value. Months use Pine's standard average duration.\n\nThe result is converted to chart bars and rounded. Below one minute, the divisor remains one minute, as before. Negative extrapolated results become zero for the gap; lines always retain at least one chart bar. The gap is capped at 495 chart bars and each line at 500. Lines are shortened further when necessary to keep the combined gap and longest line within TradingView's limit of 500 future bars.\n\nTradingView Pine does not provide reliable pixel positioning for these drawings. These interval settings let you adjust the layout, but cannot guarantee identical visual spacing at different zoom levels."
 const string LEVEL_DEFINITIONS_TOOLTIP = "Enter one DEFAULT definition and optional exact chart-symbol overrides, one per line, in KEY = LEVELS form. Example:\nDEFAULT = -ATR/2 to ATR step 1\nTRADENATION:NFLX = 2, 1.5, 1, 0, -1, -2, -3\n\nEach LEVELS value can combine comma-separated percentages and ranges. A range uses START to END and an optional step SIZE. The default step is 1. Ranges can ascend or descend. Examples:\n3 to -4\n-1 to 0.5 step 0.5, 1.5, 3, 3.5, 5 to 7\n-1 to ATR step 0.5\n-ATR/2 to ATR+1, step 0.5\n\nATR means the last confirmed daily ATR(14) of the chart symbol, never a mapped symbol. The indicator converts ATR to a percentage of the cached 0% basis. Use ATR, +ATR, or -ATR, optionally followed immediately by / and a positive number, then by an optional percentage-point adjustment. Examples: ATR/2, -ATR/2, ATR/3.5+1, and -ATR/2-0.5. Division is applied to ATR before the leading sign and final adjustment. Division by zero or a negative number is invalid. Parentheses, multiplication, and other arithmetic are not supported.\n\nAn ATR endpoint is rounded outwards to its range step, so the outer level is never narrower than the ATR expression. +ATR and ATR are equivalent. An exact chart-symbol entry overrides DEFAULT. DEFAULT is required. Spaces and keyword letter case are ignored. Use decimal points because commas separate items. The 0% level is always added, duplicates are removed, levels are sorted, and the active definition is limited to 50 unique levels. A malformed active definition displays an error and draws no levels."
 const string DEFAULT_FUTURES_MAPPING_PAIRS = "IG:NASDAQ=CME_MINI:NQ1!\nTRADENATION:USTEC=CME_MINI:MNQ1!\nTRADENATIONSB:USTEC=CME_MINI:MNQ1!\nIG:SPTRD=CME_MINI:ES1!\nTRADENATION:US500=CME_MINI:ES1!\nTRADENATIONSB:US500=CME_MINI:ES1!"
 const string DEFAULT_MAIN_SESSION_MAPPING_PAIRS = "IG:NASDAQ=NASDAQ:QQQ\nTRADENATION:USTEC=NASDAQ:QQQ\nTRADENATIONSB:USTEC=NASDAQ:QQQ\nIG:SPTRD=AMEX:SPY\nTRADENATION:US500=AMEX:SPY\nTRADENATIONSB:US500=AMEX:SPY"
@@ -30,8 +31,8 @@ levelDefinitionsInput = input.text_area(DEFAULT_LEVEL_DEFINITIONS, "Level defini
 futuresMappingPairsInput = input.text_area(DEFAULT_FUTURES_MAPPING_PAIRS, "Outside main session", tooltip = "Enter one source=target symbol pair per line, using complete TradingView ticker IDs. These source mappings apply outside the configured main session.", group = groupSourceMappings, display = display.data_window)
 mainSessionMappingPairsInput = input.text_area(DEFAULT_MAIN_SESSION_MAPPING_PAIRS, "During main session", tooltip = "Enter one source=target symbol pair per line, using complete TradingView ticker IDs. These source mappings apply during the configured main session.", group = groupSourceMappings, display = display.data_window)
 mainSessionInput = input.session("0930-1600", "Main session", tooltip = "Weekdays in the America/New_York time zone.", group = groupSourceMappings, display = display.data_window)
-distanceFromCandle = input.int(50, "Distance from candle (1m bars)", minval = 0, maxval = 495, tooltip = "Base distance measured in 1-minute bars. It is automatically converted to chart bars on higher timeframes. The combined distance and line length are capped at 500 future bars.", group = groupPosition, display = display.data_window)
-lineLength = input.int(200, "Other line length (1m bars)", minval = 1, maxval = 500, tooltip = "Base length measured in 1-minute bars. It is automatically converted to chart bars on higher timeframes. The combined distance and line length are capped at 500 future bars.", group = groupPosition, display = display.data_window)
+distanceFromCandleInput = input.string("1m = 5, 5m = 300", "Distance from candle", tooltip = "Horizontal gap from the latest candle to the start of the longest level line. Shorter lines start further right because all right endpoints are aligned.\n\n" + POSITION_PRESETS_TOOLTIP, group = groupPosition, display = display.data_window)
+lineLengthInput = input.string("1m = 100, 5m = 300", "Other line length", tooltip = "Length of the upper and lower level lines, coloured green and red by default.\n\n" + POSITION_PRESETS_TOOLTIP, group = groupPosition, display = display.data_window)
 zeroLineStyleInput = input.string("Dotted", "Line style", options = ["Solid", "Dotted", "Dashed"], group = groupZeroStyle, display = display.data_window)
 zeroLineWidth = input.int(1, "Line width", minval = 1, maxval = 5, group = groupZeroStyle, display = display.data_window)
 zeroLineColour = input.color(color.rgb(179, 179, 179), "Line colour", group = groupZeroStyle, display = display.data_window)
@@ -49,7 +50,7 @@ labelFormat = input.string("<price> / <percent>", "Label format", tooltip = "For
 labelFontSize = input.int(10, "Font size (pt)", minval = 1, group = groupTextStyle, display = display.data_window, active = showLabels)
 labelFontFamilyInput = input.string("Monospace", "Font family", options = ["Default", "Monospace"], group = groupTextStyle, display = display.data_window, active = showLabels)
 labelBackgroundColour = input.color(color.new(color.black, 100), "Background colour", group = groupTextStyle, display = display.data_window, active = showLabels)
-zeroLineLength = input.int(400, "Zero line length (1m bars)", minval = 1, maxval = 500, tooltip = "Base length measured in 1-minute bars. It is automatically converted to chart bars on higher timeframes. The combined distance and zero line length are capped at 500 future bars.", group = groupPosition, display = display.data_window)
+zeroLineLengthInput = input.string("1m = 200, 5m = 600", "Zero line length", tooltip = "Length of the 0% level line. Its right endpoint stays aligned with the other level lines.\n\n" + POSITION_PRESETS_TOOLTIP, group = groupPosition, display = display.data_window)
 currentPriceLabelFormat = input.string("<percent>", "Label format", tooltip = "Format the moving current-price label with <percent> and <price>. Leave this field empty to hide the label.", group = groupCurrentPrice, display = display.data_window)
 currentPriceLabelPosition = input.int(0, "Distance from candle (bars)", minval = -1, maxval = 494, tooltip = "Use 0 to left-align the label immediately after the latest candle, or a positive value to add empty chart bars. Use -1 to right-align it at the level-line end.", group = groupCurrentPrice, display = display.data_window)
 brokerExchangePrefixesInput = input.string("IG, TRADENATION, TRADENATIONSB", "Broker prefixes", tooltip = "When no active Source mappings entry maps the current chart, the indicator uses the symbol decoded by SVKO CFD Symbol Mapper only if the chart prefix is listed here. Enter comma-separated prefixes. An active session source mapping always takes priority. Default: IG, TRADENATION, TRADENATIONSB.", group = groupSymbolMapper, display = display.data_window)
@@ -59,11 +60,68 @@ mapperCode2Source = input.source(close, "2nd code", tooltip = "Select Map: 2nd c
 lineStyle(string value) =>
     value == "Solid" ? line.style_solid : value == "Dashed" ? line.style_dashed : line.style_dotted
 
-scaleOneMinuteBars(int oneMinuteBars) =>
+scaleOneMinuteBars(float oneMinuteBars) =>
     float chartSeconds = timeframe.in_seconds()
     float effectiveChartSeconds = na(chartSeconds) ? 60.0 : math.max(chartSeconds, 60.0)
-    int scaledBars = int(math.round(float(oneMinuteBars) * 60.0 / effectiveChartSeconds))
+    int scaledBars = int(math.round(math.min(oneMinuteBars / effectiveChartSeconds * 60.0, 500.0)))
     oneMinuteBars == 0 ? 0 : math.max(scaledBars, 1)
+
+positionIntervalSeconds(string interval) =>
+    string unit = str.endswith(interval, "min") ? "min" : str.endswith(interval, "mo") ? "mo" : str.length(interval) > 0 ? str.substring(interval, str.length(interval) - 1) : ""
+    float unitSeconds = unit == "s" ? timeframe.in_seconds("1S") : unit == "m" or unit == "min" ? timeframe.in_seconds("1") : unit == "h" ? timeframe.in_seconds("60") : unit == "d" ? timeframe.in_seconds("1D") : unit == "w" ? timeframe.in_seconds("1W") : unit == "mo" ? timeframe.in_seconds("1M") : na
+    string multiplierText = str.length(interval) > str.length(unit) ? str.substring(interval, 0, str.length(interval) - str.length(unit)) : ""
+    float multiplier = str.tonumber(multiplierText)
+    not na(unitSeconds) and not na(multiplier) and multiplier > 0 and multiplier == math.floor(multiplier) ? multiplier * unitSeconds : na
+
+resolvePositionPreset(string definition, string settingName) =>
+    string compact = str.lower(str.replace_all(str.replace_all(str.replace_all(str.replace_all(definition, " ", ""), "\t", ""), "\r", ""), "\n", ""))
+    array<string> pairs = str.split(compact, ",")
+    array<float> intervals = array.new<float>()
+    array<float> values = array.new<float>()
+    string errorMessage = ""
+    float resolvedValue = na
+    if compact == ""
+        errorMessage := settingName + ": enter at least one interval = value pair."
+    else
+        for pair in pairs
+            array<string> parts = str.split(pair, "=")
+            if array.size(parts) != 2
+                errorMessage := settingName + ": invalid pair '" + pair + "'. Use interval = value."
+                break
+            float intervalSeconds = positionIntervalSeconds(array.get(parts, 0))
+            float presetValue = str.tonumber(array.get(parts, 1))
+            if na(intervalSeconds)
+                errorMessage := settingName + ": invalid interval '" + array.get(parts, 0) + "'. Use a positive whole number followed by s, m, min, h, d, w or mo."
+                break
+            if na(presetValue) or presetValue < 0
+                errorMessage := settingName + ": value for '" + array.get(parts, 0) + "' must be a non-negative number."
+                break
+            if array.includes(intervals, intervalSeconds)
+                errorMessage := settingName + ": duplicate interval '" + array.get(parts, 0) + "'."
+                break
+            array.push(intervals, intervalSeconds)
+            array.push(values, presetValue)
+    if errorMessage == ""
+        int presetCount = array.size(intervals)
+        if presetCount == 1
+            resolvedValue := array.get(values, 0)
+        else
+            array<int> sortedIndices = array.sort_indices(intervals, order.ascending)
+            float chartSeconds = nz(timeframe.in_seconds(), 60)
+            int lowerIndex = array.get(sortedIndices, 0)
+            int upperIndex = array.get(sortedIndices, 1)
+            for pointIndex = 1 to presetCount - 1
+                lowerIndex := array.get(sortedIndices, pointIndex - 1)
+                upperIndex := array.get(sortedIndices, pointIndex)
+                if chartSeconds <= array.get(intervals, upperIndex)
+                    break
+            float lowerSeconds = array.get(intervals, lowerIndex)
+            float upperSeconds = array.get(intervals, upperIndex)
+            float lowerValue = array.get(values, lowerIndex)
+            float upperValue = array.get(values, upperIndex)
+            resolvedValue := chartSeconds == lowerSeconds ? lowerValue : chartSeconds == upperSeconds ? upperValue : lowerValue + (chartSeconds - lowerSeconds) / (upperSeconds - lowerSeconds) * (upperValue - lowerValue)
+        resolvedValue := math.max(resolvedValue, 0)
+    [resolvedValue, errorMessage]
 
 lastConfirmedDailyAtr() =>
     ta.atr(ATR_LENGTH)[1]
@@ -273,8 +331,19 @@ var map<string, string> futuresMappings = map.new<string, string>()
 var map<string, string> mainSessionMappings = map.new<string, string>()
 var string levelDefinitionsLoadError = ""
 var string activeLevelDefinition = ""
+var float distanceFromCandle = na
+var float lineLength = na
+var float zeroLineLength = na
+var string positionSettingsError = ""
 
 if barstate.isfirst
+    [distanceValue, distanceError] = resolvePositionPreset(distanceFromCandleInput, "Distance from candle")
+    [lineValue, lineError] = resolvePositionPreset(lineLengthInput, "Other line length")
+    [zeroLineValue, zeroLineError] = resolvePositionPreset(zeroLineLengthInput, "Zero line length")
+    distanceFromCandle := distanceValue
+    lineLength := lineValue
+    zeroLineLength := zeroLineValue
+    positionSettingsError := distanceError != "" ? distanceError : lineError != "" ? lineError : zeroLineError
     levelDefinitionsLoadError := loadLevelDefinitions(levelDefinitions, levelDefinitionsInput)
     activeLevelDefinition := levelDefinitionsLoadError == "" ? findActiveLevelDefinition(levelDefinitions, chartSymbol) : ""
     loadMappingPairs(futuresMappings, futuresMappingPairsInput)
@@ -300,6 +369,7 @@ hasCalculationSymbol = str.contains(calculationSymbol, ":") and not str.contains
 
 varip float zeroLevel = na
 varip string cachedCalculationSymbol = ""
+varip string cachedResolutionMethod = ""
 varip string levelDefinitionError = ""
 varip array<float> levelPercents = array.new<float>()
 
@@ -312,6 +382,7 @@ if shouldLoadZeroLevel
     if not na(calculatedZeroLevel)
         zeroLevel := calculatedZeroLevel
         cachedCalculationSymbol := calculationSymbol
+        cachedResolutionMethod := activeMappedSymbol != "" ? (isMainSession ? "Main session mapping" : "Outside main session mapping") : mapperFallbackEligible ? "indicator SVKO CFD Symbol Mapper" : "Chart symbol"
         if levelDefinitionsLoadError != ""
             levelDefinitionError := levelDefinitionsLoadError
             array.clear(levelPercents)
@@ -324,17 +395,18 @@ if shouldLoadZeroLevel
 
 var array<line> levelLines = array.new<line>()
 var array<box> levelTextBoxes = array.new<box>()
-var box currentPriceTextBox = box.new(left = bar_index, top = close, right = bar_index, bottom = close, xloc = xloc.bar_index, border_color = na, bgcolor = labelBackgroundColour, text = "", text_color = color.white, text_size = labelFontSize, text_halign = text.align_right, text_valign = text.align_bottom, text_wrap = text.wrap_none, text_font_family = labelFontFamilyInput == "Monospace" ? font.family_monospace : font.family_default)
+var label currentPriceTextLabel = label.new(x = bar_index, y = na, text = "", xloc = xloc.bar_index, yloc = yloc.price, color = labelBackgroundColour, style = label.style_label_lower_left, textcolor = color.white, size = labelFontSize, textalign = text.align_left, tooltip = "", text_font_family = labelFontFamilyInput == "Monospace" ? font.family_monospace : font.family_default)
 var table levelErrorTable = table.new(position.bottom_right, 1, 1)
 
 if barstate.islast
-    string configurationError = levelDefinitionsLoadError != "" ? levelDefinitionsLoadError : levelDefinitionError
-    table.cell(levelErrorTable, 0, 0, configurationError == "" ? "" : "LEVEL DEFINITIONS ERROR\n" + configurationError, text_color = configurationError == "" ? na : color.white, bgcolor = configurationError == "" ? na : color.new(color.red, 35), text_size = size.small)
+    string configurationError = positionSettingsError != "" ? positionSettingsError : levelDefinitionsLoadError != "" ? levelDefinitionsLoadError : levelDefinitionError
+    string configurationErrorTitle = positionSettingsError != "" ? "POSITION SETTINGS ERROR\n" : "LEVEL DEFINITIONS ERROR\n"
+    table.cell(levelErrorTable, 0, 0, configurationError == "" ? "" : configurationErrorTitle + configurationError, text_color = configurationError == "" ? na : color.white, bgcolor = configurationError == "" ? na : color.new(color.red, 35), text_size = size.small)
     bool showLevels = not na(zeroLevel) and cachedCalculationSymbol == calculationSymbol and configurationError == "" and array.size(levelPercents) > 0
     if showLevels
-        int scaledDistanceFromCandle = scaleOneMinuteBars(distanceFromCandle)
-        int scaledLineLength = scaleOneMinuteBars(lineLength)
-        int scaledZeroLineLength = scaleOneMinuteBars(zeroLineLength)
+        int scaledDistanceFromCandle = math.min(scaleOneMinuteBars(distanceFromCandle), 495)
+        int scaledLineLength = math.max(scaleOneMinuteBars(lineLength), 1)
+        int scaledZeroLineLength = math.max(scaleOneMinuteBars(zeroLineLength), 1)
         int availableLineLength = 500 - scaledDistanceFromCandle
         int maximumLineLength = math.max(scaledZeroLineLength, scaledLineLength)
         int lineEnd = bar_index + scaledDistanceFromCandle + math.min(maximumLineLength, availableLineLength)
@@ -380,26 +452,28 @@ if barstate.islast
         bool showCurrentPrice = currentPriceLabelFormat != ""
         if showCurrentPrice
             bool rightAlignCurrentPrice = currentPriceLabelPosition == -1
-            int currentPriceTextStart = rightAlignCurrentPrice ? lineEnd - math.min(scaledLineLength, availableLineLength) : bar_index + currentPriceLabelPosition + 1
-            int currentPriceTextEnd = rightAlignCurrentPrice ? lineEnd : math.max(lineEnd, currentPriceTextStart + 1)
+            int currentPriceLabelX = rightAlignCurrentPrice ? lineEnd : bar_index + currentPriceLabelPosition + 1
             float currentPrice = close
             float currentPricePercent = (currentPrice / zeroLevel - 1) * 100
             string currentPriceLabel = formatLevelLabel(currentPricePercent, currentPrice, currentPriceLabelFormat)
-            box.set_left(currentPriceTextBox, currentPriceTextStart)
-            box.set_right(currentPriceTextBox, currentPriceTextEnd)
-            box.set_top(currentPriceTextBox, currentPrice)
-            box.set_bottom(currentPriceTextBox, currentPrice)
-            box.set_bgcolor(currentPriceTextBox, labelBackgroundColour)
-            box.set_text(currentPriceTextBox, currentPriceLabel)
-            box.set_text_color(currentPriceTextBox, color.white)
-            box.set_text_size(currentPriceTextBox, labelFontSize)
-            box.set_text_halign(currentPriceTextBox, rightAlignCurrentPrice ? text.align_right : text.align_left)
-            box.set_text_font_family(currentPriceTextBox, labelFontFamilyInput == "Monospace" ? font.family_monospace : font.family_default)
+            label.set_xy(currentPriceTextLabel, currentPriceLabelX, currentPrice)
+            label.set_color(currentPriceTextLabel, labelBackgroundColour)
+            label.set_text(currentPriceTextLabel, currentPriceLabel)
+            label.set_textcolor(currentPriceTextLabel, color.white)
+            label.set_size(currentPriceTextLabel, labelFontSize)
+            label.set_style(currentPriceTextLabel, rightAlignCurrentPrice ? label.style_label_lower_right : label.style_label_lower_left)
+            label.set_textalign(currentPriceTextLabel, rightAlignCurrentPrice ? text.align_right : text.align_left)
+            label.set_text_font_family(currentPriceTextLabel, labelFontFamilyInput == "Monospace" ? font.family_monospace : font.family_default)
+            label.set_tooltip(currentPriceTextLabel, "Instrument " + cachedCalculationSymbol + " is resolved via " + cachedResolutionMethod)
         else
-            box.set_text(currentPriceTextBox, "")
+            label.set_y(currentPriceTextLabel, na)
+            label.set_text(currentPriceTextLabel, "")
+            label.set_tooltip(currentPriceTextLabel, "")
     else
         if array.size(levelLines) > 0
             for levelIndex = 0 to array.size(levelLines) - 1
                 line.set_color(array.get(levelLines, levelIndex), na)
                 box.set_text(array.get(levelTextBoxes, levelIndex), "")
-        box.set_text(currentPriceTextBox, "")
+        label.set_y(currentPriceTextLabel, na)
+        label.set_text(currentPriceTextLabel, "")
+        label.set_tooltip(currentPriceTextLabel, "")

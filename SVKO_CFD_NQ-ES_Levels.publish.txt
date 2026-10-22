@@ -9,6 +9,8 @@ The main level is 0%. It represents the chart price implied when the mapped symb
 
 The optional current-price label remains live and shows the chart price's percentage distance from the stored 0% basis.
 
+Hover over the current price label to see the full instrument symbol and how it was selected for the stored 0% basis. The tooltip identifies the main session mapping, outside main session mapping, SVKO CFD Symbol Mapper, or chart symbol as the source.
+
 
 █ [b]HOW IT WORKS[/b]
 
@@ -52,7 +54,15 @@ When the active list has no match, the indicator can use SVKO CFD Symbol Mapper 
 
 █ [b]POSITION AND DISPLAY[/b]
 
-Distance and line-length settings use one-minute bar equivalents. On higher chart timeframes, the indicator reduces the chart-bar count to preserve approximately the same elapsed-time spacing.
+Distance from candle, Other line length and Zero line length each accept comma separated interval = value pairs, such as 1m = 5, 5m = 300. Values use one minute bar equivalents: 5m = 300 means 60 bars on a five minute chart. Supported interval units are s, m, min, h, d, w and mo; mo means months. Spaces and letter case are ignored.
+
+Listed intervals use their exact values. Between intervals, the indicator interpolates linearly by interval duration. Outside the range, it continues the straight line through the nearest two points. A single pair gives a constant value. Months use Pine's standard average duration. Invalid pairs, negative entered values and duplicate intervals display a position settings error and draw no levels.
+
+Distance from candle is the horizontal gap from the latest candle to the start of the longest level line. Shorter lines start further right because all right endpoints stay aligned. Other line length controls the upper and lower lines; Zero line length controls the 0% line.
+
+Resolved values are converted to chart bars and rounded. Below one minute, the conversion divisor remains one minute. Negative extrapolated gaps become zero and lines retain at least one chart bar. The gap is capped at 495 chart bars. Lines are shortened when needed to keep the gap plus the longest line within TradingView's limit of 500 future bars.
+
+Pine does not provide reliable pixel positioning for these drawings. Interval settings let you adjust their layout, but cannot guarantee identical visual spacing at different zoom levels.
 
 The zero, upper, and lower levels have independent styles. The current-price label can sit immediately after the latest candle, use additional padding, or align with the level endpoints.
 
@@ -71,6 +81,11 @@ The 0% basis is a live snapshot. Reloading at another time can produce a differe
 Feed timing, spreads, currencies, sessions, instrument specifications, and data permissions can make the CFD and calculation symbol diverge. If neither the active mapping nor the configured Mapper fallback supplies a valid symbol, or if daily data is unavailable, the indicator draws nothing.
 
 ATR ranges use the last confirmed daily ATR rather than the developing current daily ATR. They stay stable during the day but do not include volatility added by the unfinished daily bar. ATR divisors must be positive. The active definition is limited to 50 unique levels.
+
+
+█ [b]WEBSITE GUIDE[/b]
+
+[url=https://trading.cvladan.com/tools/cfd-levels/]Read the indicator guide and setup instructions[/url].
 
 
 █ [b]CREDITS AND LICENCE[/b]

@@ -2,6 +2,8 @@
 
 ## Detailed user documentation
 
+[Read the indicator guide and setup instructions](https://trading.cvladan.com/tools/cfd-levels/).
+
 ### Purpose and levels
 
 SVKO CFD NQ-ES Levels translates the mapped underlying market's daily percentage change into price levels on Nasdaq 100 and S&P 500 CFD charts. It makes the mapped move visible directly on the CFD chart without manual conversion.
@@ -129,7 +131,25 @@ Both codes are required. If either input remains on `close`, the Mapper returns 
 
 ### Position and display defaults
 
-The default distance from the latest candle is 50 one-minute bar equivalents. The `0%` line defaults to 400 one-minute bar equivalents, while other levels default to 200. On higher chart timeframes, these values are converted to fewer chart bars to preserve approximately the same elapsed-time spacing. The combined distance and each line length are capped at 500 future chart bars.
+The `Position` group contains three independent text fields. Their labels omit the unit; each tooltip explains that values use one minute bar equivalents.
+
+| Setting | Default |
+| --- | --- |
+| `Distance from candle` | `1m = 5, 5m = 300` |
+| `Other line length` | `1m = 100, 5m = 300` |
+| `Zero line length` | `1m = 200, 5m = 600` |
+
+These are starting points for adjustment, not a promise of identical spacing across charts. Enter comma separated `interval = value` pairs. Supported units are `s`, `m`, `min`, `h`, `d`, `w` and `mo`. Use `mo` for months; `m` and `M` both mean minutes. Spaces and letter case are ignored. Interval multipliers must be positive whole numbers. Values may be zero or positive decimals, using a decimal point. Negative entered values, missing pairs, unknown units and equivalent duplicate intervals such as `60m` and `1h` produce a `POSITION SETTINGS ERROR` naming the field and draw no levels.
+
+Pairs are parsed once and ordered by duration. At an exact interval, its value is used. Between intervals, values are interpolated linearly by duration. Below or above the listed range, the same straight line continues through the nearest two points. With one pair, its value is constant at every interval. Durations use Pine's time conversion, including its average month duration rather than the number of days in a particular calendar month.
+
+The resolved value is then converted from one minute equivalents to chart bars and rounded. For `1m = 5, 5m = 300`, the three minute value is `152.5`, which becomes `51` chart bars. On five minutes, `300` becomes `60` chart bars. On fifteen minutes, extrapolation gives `1037.5`, which becomes `69` chart bars. Below one minute, interpolation uses the actual interval duration but the conversion divisor stays at one minute, preserving the previous conversion behaviour.
+
+`Distance from candle` is the horizontal gap from the latest candle to the start of the longest line. Shorter lines start further right because all right endpoints remain aligned. `Other line length` controls the upper and lower lines, coloured green and red by default; `Zero line length` controls the `0%` line. Changing a line length can move the shared right endpoint. The separate current price label position setting is unchanged.
+
+Negative extrapolated gaps become zero; each line retains at least one chart bar. The gap is capped at `495` chart bars and each line at `500`. Lines are shortened further to fit the remaining space, so the combined gap and longest line never exceed TradingView's `500` future bar limit. For example, a gap of `495` leaves at most `5` bars for each line.
+
+Pine does not provide reliable pixel positioning for these drawings. Interval settings let you tune the layout, but cannot guarantee identical visual spacing at different zoom levels. This implementation does not use visible range variables, so it does not introduce recalculation of the stored `0%` basis in response to zooming or scrolling.
 
 The default level labels are enabled, use 10-point monospace text, and follow `<price> / <percent>`. Labels are right-aligned at the right end of their lines. Zero, upper, and lower levels have separate line styles, widths, line colours, and text colours. The `0%` level defaults to an opaque `#B3B3B3` dotted line; upper levels use lime and lower levels use red.
 
@@ -140,6 +160,12 @@ The moving current-price label defaults to `<percent>`. Its position input uses:
 - `-1` to preserve the older right-aligned position at the level-line endpoint.
 
 Leave the current-price label format empty to hide that label.
+
+Hover over the current price label to see the instrument used for the stored `0%` basis and how it was selected. For example, `Instrument NASDAQ:QQQ is resolved via Main session mapping`. The method is one of `Main session mapping`, `Outside main session mapping`, `indicator SVKO CFD Symbol Mapper`, or `Chart symbol`.
+
+The instrument and method belong to the same successful basis snapshot. If the session changes but the resolved instrument stays the same, the tooltip keeps the original method until a new basis is stored. The live percentage remains the chart price's distance from that basis, rather than a continuously refreshed daily percentage for the reference instrument. The tooltip is hidden whenever the current price label is hidden or the basis is unavailable.
+
+The current price text uses a Pine label to support hover tooltips. It retains the configured font, size, colour, background colour and position anchors. TradingView controls the label padding and background shape, so its spacing and background can differ from the previous text box.
 
 ### Alerts
 
@@ -167,6 +193,8 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 
 ## Publishing procedure
 
+Run the publication preflight and verify the matching website guide before submission. The website link added locally on 21 October 2026 is prepared text, not a verified change to the existing TradingView description. If that description is locked, include the guide link in the next authorised update note without rewriting earlier release notes.
+
 1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
 2. Use the existing `SVKO Publish` chart and the existing script instance when present. Do not add a duplicate or open another layout merely for publication.
 3. Publish directly with Privacy set to Public and Access set to Open-source using the exact TradingView-formatted description from `SVKO_CFD_NQ-ES_Levels.publish.txt` after explicit action-time confirmation.
@@ -187,6 +215,10 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 - The optional current price label remains live after the basis has been stored.
 
 ## Development history
+
+21 October 2026: replaced the three numeric position settings with interval presets, retaining one minute bar equivalents and the existing right endpoint alignment. Added duration based interpolation, extrapolation, field specific validation and documented limits. Only the three position input values were migrated to their new text defaults; other inputs and Mapper bindings were preserved. Compilation passed with no errors or warnings, cloud source version 29.0 matched the local file, and the existing instance in the TN Stocks layout was updated through the native version updater. All 22 input and boundary checks passed, covering interpolation, extrapolation, a single pair, unsorted entries, supported units, month duration, invalid input and the 500-bar limit. Default geometry passed on 30-second, one-minute, three-minute, 15-minute and daily charts. Visual checks confirmed the settings and ruler; the level calculations and instrument tooltip code are unchanged. The original symbol, five-minute interval and all non-position settings were restored and verified. No public publication update was submitted.
+
+21 October 2026: added a tooltip to the current price label with the full basis instrument and its cached resolution method. Replaced only the current price text box with a reusable label. Calculations, source priority and inputs are unchanged. Pine compilation passed with no errors or warnings, cloud source version 28.0 matched the local file, and the existing instance in the TN Stocks layout was updated through the native version updater. Existing inputs, Mapper bindings and visibility were verified after restoring all temporary test settings. All four resolution methods, a changed reference instrument, positions 0, 8 and -1, a visible background, an empty label format and missing Mapper sources were checked live. Label padding and background shape differ from the previous box. Retention of the original method across a session transition with the same instrument was checked in the source; a natural session transition was not observed during this verification. The previously local licence notice was included in this cloud sync. No public publication update was submitted.
 
 22 September 2026: the local source notice and licensing documentation were changed to SVKO Personal Use and Commercial Licence 1.0. Executable Pine code is unchanged. This records local preparation only; no TradingView cloud sync or publication update has been verified for this licensing change. Previously published MPL-2.0 permissions remain valid for the code they cover.
 
@@ -216,6 +248,9 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 - Public page URL: https://www.tradingview.com/script/VWtZmFRE-SVKO-CFD-NQ-ES-Levels/
 
 ## Pre-publish checklist
+
+- [ ] Publication preflight confirms the matching website guide link in the public description and detailed documentation
+- [ ] Website guide opens successfully and identifies this indicator
 
 - [x] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [x] Cloud source re-fetched and verified
