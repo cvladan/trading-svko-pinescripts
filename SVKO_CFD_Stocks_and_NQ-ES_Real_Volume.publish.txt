@@ -71,3 +71,7 @@ Original work by SVKO. Open source + commercial licence under the SVKO Personal 
 [b]28 July 2026[/b]
 
 The Mapper fallback now uses a clearer Broker prefixes setting placed before the two code inputs, while explicit volume formulas continue to take priority.
+
+[b]22 October 2026[/b]
+
+The source now includes the SVKO Personal Use and Commercial Licence 1.0 notice. Volume calculations and settings are unchanged. Personal use remains free; business use requires a separate commercial licence. Existing permissions for earlier MPL 2.0 versions remain valid. [url=https://trading.cvladan.com/tools/real-volume/]Read the indicator guide and setup instructions[/url].
