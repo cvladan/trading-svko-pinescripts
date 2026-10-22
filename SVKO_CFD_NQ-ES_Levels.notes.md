@@ -193,6 +193,8 @@ Use a clean supported Nasdaq 100 or S&P 500 CFD chart. Choose a timeframe that l
 
 ## Publishing procedure
 
+For the 22 October 2026 update, retain the existing published chart image. The user authorised updating all previously published indicators listed on the website without further questions.
+
 Run the publication preflight and verify the matching website guide before submission. The website link added locally on 21 October 2026 is prepared text, not a verified change to the existing TradingView description. If that description is locked, include the guide link in the next authorised update note without rewriting earlier release notes.
 
 1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
@@ -215,6 +217,8 @@ Run the publication preflight and verify the matching website guide before submi
 - The optional current price label remains live after the basis has been stored.
 
 ## Development history
+
+22 October 2026: updated the existing public TradingView publication to public version 3 using saved source version 29.0. The public source was fetched and verified against the local file. The dated release note and matching website guide link were verified, with Public visibility and Open source access retained. The existing published chart content and locked original description were unchanged. The original description remains a historical record; the new release note records the current licence notice and links to the current guide. Existing instances in the SVKO Publish layout were updated through the native version updater without adding or removing studies. The old step and count inputs were converted to the equivalent DEFAULT range of -1 to 1 step 0.5, and the three position inputs use the approved interval presets. Other inputs and source bindings were preserved.
 
 21 October 2026: replaced the three numeric position settings with interval presets, retaining one minute bar equivalents and the existing right endpoint alignment. Added duration based interpolation, extrapolation, field specific validation and documented limits. Only the three position input values were migrated to their new text defaults; other inputs and Mapper bindings were preserved. Compilation passed with no errors or warnings, cloud source version 29.0 matched the local file, and the existing instance in the TN Stocks layout was updated through the native version updater. All 22 input and boundary checks passed, covering interpolation, extrapolation, a single pair, unsorted entries, supported units, month duration, invalid input and the 500-bar limit. Default geometry passed on 30-second, one-minute, three-minute, 15-minute and daily charts. Visual checks confirmed the settings and ruler; the level calculations and instrument tooltip code are unchanged. The original symbol, five-minute interval and all non-position settings were restored and verified. No public publication update was submitted.
 
@@ -249,8 +253,8 @@ Run the publication preflight and verify the matching website guide before submi
 
 ## Pre-publish checklist
 
-- [ ] Publication preflight confirms the matching website guide link in the public description and detailed documentation
-- [ ] Website guide opens successfully and identifies this indicator
+- [x] Publication preflight confirms the matching website guide link in the public description and detailed documentation
+- [x] Website guide opens successfully and identifies this indicator
 
 - [x] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [x] Cloud source re-fetched and verified
