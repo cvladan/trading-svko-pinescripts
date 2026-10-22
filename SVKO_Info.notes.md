@@ -2,6 +2,8 @@
 
 ## Detailed user documentation
 
+[Read the indicator guide and setup instructions](https://trading.cvladan.com/tools/info/).
+
 ### Purpose and output
 
 SVKO Info displays key market information for a chart symbol and its mapped native counterpart in one compact table. It is designed for following an exchange-listed underlying from a broker CFD chart without leaving the chart.
@@ -141,6 +143,8 @@ Use a clean chart where the bottom right table is legible and the mapped price m
 
 ## Publishing procedure
 
+Run the publication preflight and verify the matching website guide before submission. The website link added locally on 21 October 2026 is prepared text, not a verified change to the existing TradingView description. If that description is locked, include the guide link in the next authorised update note without rewriting earlier release notes.
+
 1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
 2. Use the existing `SVKO Publish` chart and the existing script instance when present. Do not add a duplicate or open another layout merely for publication.
 3. For an update, select the existing SVKO Info publication and paste only the newest dated block from **Public release notes** in `SVKO_Info.publish.txt`.
@@ -222,6 +226,9 @@ Use a clean chart where the bottom right table is legible and the mapped price m
 - Public page URL: https://www.tradingview.com/script/XP6l9CnM-SVKO-Info/
 
 ## Pre-publish checklist
+
+- [ ] Publication preflight confirms the matching website guide link in the public description and detailed documentation
+- [ ] Website guide opens successfully and identifies this indicator
 
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified
