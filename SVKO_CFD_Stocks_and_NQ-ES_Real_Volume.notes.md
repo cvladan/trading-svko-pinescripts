@@ -2,6 +2,8 @@
 
 ## Detailed user documentation
 
+[Read the indicator guide and setup instructions](https://trading.cvladan.com/tools/real-volume/).
+
 ### Purpose and output
 
 SVKO CFD Stocks & NQ-ES Real Volume replaces broker CFD volume with native stock volume or a configurable activity proxy for Nasdaq 100 and S&P 500 CFDs. It displays standard up and down volume columns in a dedicated pane and can calculate an optional Real VWAP on the CFD price using that external volume.
@@ -105,6 +107,8 @@ Use a clean supported CFD chart with clearly visible volume columns and Real VWA
 
 ## Publishing procedure
 
+Run the publication preflight and verify the matching website guide before submission. The website link added locally on 21 October 2026 is prepared text, not a verified change to the existing TradingView description. If that description is locked, include the guide link in the next authorised update note without rewriting earlier release notes.
+
 1. Assume the saved cloud script has already been compiled, synced, and versioned through the Pine sync workflow.
 2. Use the existing `SVKO Publish` chart and the existing script instance when present. Do not add a duplicate or open another layout merely for publication.
 3. Publish directly with Privacy set to Public and Access set to Open-source using the exact TradingView-formatted description from `SVKO_CFD_Stocks_and_NQ-ES_Real_Volume.publish.txt` after explicit action-time confirmation.
@@ -141,6 +145,9 @@ Use a clean supported CFD chart with clearly visible volume columns and Real VWA
 - Public page URL: https://www.tradingview.com/script/ulDZ4fEm-SVKO-CFD-Stocks-NQ-ES-Real-Volume/
 
 ## Pre-publish checklist
+
+- [ ] Publication preflight confirms the matching website guide link in the public description and detailed documentation
+- [ ] Website guide opens successfully and identifies this indicator
 
 - [ ] Pine source compiled and validated through the repo-local TradingView Pine sync skill
 - [ ] Cloud source re-fetched and verified
