@@ -17,7 +17,7 @@ Depending on enabled inputs and TradingView data availability, the table can sho
 - daily ATR as a percentage;
 - the next earnings date and countdown, or the most recent reported release and elapsed days;
 - average analyst target with upside or downside runway;
-- trailing and forward P/E data.
+- valuation data, including trailing P/E and reported PEG.
 
 Each optional feature gates its related request and formatting path. A disabled feature does not continue fetching its data.
 
@@ -113,6 +113,14 @@ Set line length to `0` to hide the marker and disable its mapped-price request. 
 
 ### Company, earnings, valuation, and table defaults
 
+The P/E row uses the latest available native share price, including premarket and postmarket, divided by earnings per share for the trailing twelve months. On broker charts, both the price and financial data come from the mapped native listing. EPS is requested in that listing's currency, so a CFD quoted in another currency cannot distort the ratio. Performance and History High continue to use their regular session prices independently.
+
+Forward P/E currently displays `N/A`. The `EARNINGS_ESTIMATE` annual series was checked against TradingView's built-in forward P/E and did not provide the same forecast. The table does not substitute that historical estimate or the reported annual forward ratio for the built-in current ratio. Its tooltip explains the limitation.
+
+PEG is TradingView's reported `PEG_RATIO` for `FQ`, with `FY` used only when quarterly data is unavailable. It is a reported fundamental value rather than a ratio recalculated from the latest price. The tooltip identifies the source symbol, valuation price, EPS and PEG reporting period. Only the PEG label and value are green when `0 < PEG < 0.50`, and bold green when `0 < PEG < 0.30`. The thresholds use the unrounded value. Zero, negative and missing PEG values are not highlighted. Each missing metric displays `N/A` independently.
+
+The existing **Show P/E ratios** setting controls the entire valuation row and its data requests. No input IDs or Mapper bindings change. Financial data requests are prepared on the last confirmed historical bar and carry the most recent available values across gaps. Closing the market does not itself hide the row. On a TRADENATION chart without extended trading, the display remains at the last calculation until the chart receives another update.
+
 The company-name row defaults to a 20-character limit. Set the limit to `0` to hide the row and disable its request.
 
 The Earnings row uses separate windows for upcoming and recent reports. The upcoming window defaults to 20 days with the format `EEE, dd MMM, in X`. The recent window defaults to 15 full elapsed days with the format `was X ago at dd MMM`. `X` inserts `1 day` or `N days`. A report due later on the current exchange-local day appears as bold red `later today`. After its scheduled time or reported release on the same day, it appears as bold green `was today`. Other supported date tokens are `EEEE`, `EEE`, `yyyy`, `yy`, `MMMM`, `MMM`, `MM`, `dd`, `HH`, `hh`, `mm`, `ss`, and `a`. Use `a` as a standalone token for AM or PM so letters inside literal words remain unchanged.
@@ -127,7 +135,7 @@ Company metadata, earnings, analyst targets, P/E ratios, and mapped quotes depen
 
 Current-bar table values and mapped quotes can change before the bar closes. Performance refresh timing uses `varip`; an intrabar refresh state cannot be reconstructed after a reload.
 
-The mapped price marker and extended-hours row can update only when the chart receives an update. They cannot refresh independently after the chart symbol stops producing updates. Their realtime request priming uses a last-confirmed-historical-bar path so a later market-state change does not introduce a new dynamic request.
+The mapped price marker, extended-hours row and valuation row can update only when the chart receives an update. They cannot refresh independently after the chart symbol stops producing updates. Their realtime request priming uses a last-confirmed-historical-bar path so a later market-state change does not introduce a new dynamic request.
 
 The script uses lookahead only where it pairs the requested series with the required historical offset or where the value is explicitly a current-display tool. It does not use future data for historical signals. Data-feed timing, sessions, permissions, and missing fundamentals can still make displayed values incomplete.
 
@@ -167,6 +175,8 @@ Run the publication preflight and verify the matching website guide before submi
 - Input changes are migration sensitive because existing Mapper plot bindings must be preserved.
 
 ## Development history
+
+13 November 2026: separated valuation pricing from regular session performance history, added reported quarterly PEG with an annual fallback and positive value highlighting, and prepared the valuation requests before realtime execution. EPS uses the native listing's currency on CFD charts. The annual EPS estimate failed comparison with the built-in forward P/E, so the working version displays `N/A` for Fwd pending the user's choice of an alternative. Validation covered NVDA, AAPL and MSFT on native, regular TRADENATION and extended TRADENATION symbols, plus closed markets on KRX and TRADENATION:ASML.AS. Cloud version 110.0 and both existing TN Stocks instances were verified with their original inputs and Mapper bindings. Public submission remains pending.
 
 22 October 2026: updated the existing public TradingView publication to public version 4 using saved source version 106.0. The public source was fetched and verified against the local file. The dated release note and matching website guide link were verified, with Public visibility and Open source access retained. The existing published chart content and locked original description were unchanged. The original description remains a historical record; the new release note records the current licence notice and links to the current guide. Existing instances in the SVKO Publish layout were updated through the native version updater without adding or removing studies. Both existing Info instances were preserved. The older instance's disabled history high price and date option was converted to the equivalent format without those details, retaining its Mapper links. Compilation passed with eight existing consistency warnings in the unchanged conditional calculation code.
 
