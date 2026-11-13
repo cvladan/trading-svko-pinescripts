@@ -5,7 +5,7 @@ SVKO Info displays key market information for a chart symbol and its mapped nati
 
 █ [b]OVERVIEW[/b]
 
-The table can show company and symbol identity, multi-period performance, extended-hours movement, a configurable history high, daily ATR, earnings timing, analyst target, P/E and reported PEG data.
+The table can show company and symbol identity, multi-period performance, extended-hours movement, a configurable history high, daily ATR, earnings timing, analyst target, P/E and PEG data.
 
 Each optional feature controls its related data request. Native TradingView charts can display their own metrics without a mapping. A broker chart remains silent when no native counterpart can be resolved.
 
@@ -43,7 +43,7 @@ Within their configured windows, the Earnings row shows the next report first. A
 
 Earnings, analyst targets, valuation data, company metadata, and mapped quotes depend on TradingView coverage and the user's data permissions.
 
-P/E uses the latest available native share price, including premarket and postmarket, divided by trailing twelve month EPS in the native listing's currency. Forward P/E uses the same price divided by estimated EPS for the next twelve months. Reported PEG uses quarterly data, with annual data used only when quarterly data is unavailable. Positive PEG values below 0.50 are green and values below 0.30 are also bold. Zero, negative and missing values are not highlighted. The tooltip identifies the data source and reporting period.
+P/E uses the latest available native share price, including premarket and postmarket, divided by trailing twelve month EPS in the native listing's currency. Forward P/E uses the same price divided by estimated EPS for the next twelve months. PEG divides trailing P/E by the positive annual percentage growth in trailing twelve month EPS, matching TradingView’s Price/earnings to growth ratio. Positive PEG values below 0.50 are green and values below 0.30 are also bold. Zero, negative and missing values are not highlighted. The tooltip identifies the source, price and current and previous year EPS.
 
 
 █ [b]LIMITATIONS[/b]
@@ -54,7 +54,7 @@ The extended-hours row and mapped price marker are current-display tools, not hi
 
 Unavailable data appears as N/A where applicable. If a broker symbol cannot be resolved through either mapping method, the indicator draws nothing and skips its mapped data requests.
 
-Reported PEG is a fundamental snapshot, not a ratio recalculated from the latest share price. Valuation remains visible after the market closes, but it cannot refresh independently while the chart receives no updates.
+PEG changes with the native share price and is unavailable when annual EPS growth is zero or negative, or the required earnings history is missing. Valuation remains visible after the market closes, but it cannot refresh independently while the chart receives no updates.
 
 
 █ [b]WEBSITE GUIDE[/b]
@@ -86,3 +86,7 @@ The source now includes the SVKO Personal Use and Commercial Licence 1.0 notice.
 [b]13 November 2026[/b]
 
 P/E and forward P/E now use the latest available native share price, including extended hours. Forward P/E uses estimated earnings for the next twelve months. The valuation row adds reported PEG: positive values below 0.50 appear green, and those below 0.30 are also bold. Both regular and extended TRADENATION symbols use the mapped native listing for prices and fundamentals. Values remain visible after the session closes and refresh when the chart receives new data. [url=https://trading.cvladan.com/tools/info/]Read the indicator guide and setup instructions[/url].
+
+[b]13 November 2026[/b]
+
+PEG now matches TradingView’s Price/earnings to growth ratio by dividing trailing P/E by positive annual growth in trailing twelve month earnings. This corrects the earlier quarterly PEG value, including the discrepancy on META. PEG follows the native share price, including extended hours, and shows N/A when annual earnings growth is zero or negative or the required history is unavailable. Positive values below 0.50 remain green, and those below 0.30 are also bold. [url=https://trading.cvladan.com/tools/info/]Read the indicator guide and setup instructions[/url].

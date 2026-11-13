@@ -17,7 +17,7 @@ Depending on enabled inputs and TradingView data availability, the table can sho
 - daily ATR as a percentage;
 - the next earnings date and countdown, or the most recent reported release and elapsed days;
 - average analyst target with upside or downside runway;
-- valuation data, including trailing P/E and reported PEG.
+- valuation data, including trailing P/E and PEG.
 
 Each optional feature gates its related request and formatting path. A disabled feature does not continue fetching its data.
 
@@ -121,7 +121,9 @@ The forecast period matters. On 13 November 2026, TradingView's [NVDA estimates 
 
 A live Pine runtime check of `EPS_ESTIMATE/NTM` returned `13.630067` for NVDA, `9.273248` for AAPL and `20.804418` for MSFT. These matched the built-in forward P/E denominators, with a one-millionth difference for MSFT attributable to precision. This identifier and period were verified through execution; they were not listed in the public Pine financial-ID catalogue at the time of verification.
 
-PEG is TradingView's reported `PEG_RATIO` for `FQ`, with `FY` used only when quarterly data is unavailable. It is a reported fundamental value rather than a ratio recalculated from the latest price. The tooltip identifies the source symbol, valuation price, EPS and PEG reporting period. Only the PEG label and value are green when `0 < PEG < 0.50`, and bold green when `0 < PEG < 0.30`. The thresholds use the unrounded value. Zero, negative and missing PEG values are not highlighted. Each missing metric displays `N/A` independently.
+PEG matches TradingView's **Price/earnings to growth ratio**. It divides native price by diluted EPS TTM, then divides that P/E by annual EPS growth expressed as a percentage: `(current EPS TTM - previous year EPS TTM) / abs(previous year EPS TTM) * 100`. Previous year EPS comes from four quarterly TTM report observations earlier. A daily request retains five report events, with 600 daily bars for warm-up. Its unoffset current daily value is intentional for this current information table, not historical signals or backtests. PEG is unavailable when growth is zero or negative, a denominator is zero or the earnings history is missing. Negative EPS with positive growth can produce a negative PEG, matching the built-in indicator. The tooltip identifies the native symbol, price, current EPS and previous year EPS.
+
+Only the PEG label and value are green when `0 < PEG < 0.50`, and bold green when `0 < PEG < 0.30`. The thresholds use the unrounded value. Zero, negative and missing PEG values are not highlighted. Each missing metric displays `N/A` independently.
 
 The existing **Show P/E ratios** setting controls the entire valuation row and its data requests. No input IDs or Mapper bindings change. Financial data requests are prepared on the last confirmed historical bar and carry the most recent available values across gaps. Closing the market does not itself hide the row. On a TRADENATION chart without extended trading, the display remains at the last calculation until the chart receives another update.
 
@@ -237,6 +239,8 @@ Run the publication preflight and verify the matching website guide before submi
 - Changed Mapper decoding so the symbol is read once per script load after the received codes resolve to a valid symbol or explicit empty mapping.
 - Guarded empty or prefixless Mapper output before any mapped symbol request.
 - Replaced separate stale premarket and postmarket rows with one current Extended Hours row.
+
+13 November 2026: corrected PEG after the published quarterly financial ratio was found not to match the built-in Price/earnings to growth ratio. The previous verification covered highlighting thresholds but failed to compare PEG values. Direct comparisons established the trailing P/E and annual diluted EPS growth calculation, including absolute previous EPS for negative earnings and unavailable results for nonpositive growth. Captured built-in fixtures cover META, NVDA, AAPL, MSFT, GOOG, ASML and INTC; TSLA and PFE verify unavailable PEG during declining earnings. The production calculation matched 150 closed candles each for META, NVDA, AAPL and MSFT. INTC also matched on available negative EPS observations. Local mappings and Mapper fallback were checked on regular and extended TRADENATION listings, using MICROSOFT.EX for extended Microsoft. The valuation row remained correct with Performance and History High disabled. Cloud version 112.0 and both TN Stocks instances were verified with original settings. Published as public version 6 with the existing chart retained; its normalised source matches the local file. Both existing Laptop instances, including the hidden instance, use public version 6 with preserved inputs and visibility. Compilation passed with the same eight existing consistency warnings. The website guide, PEG colour examples and identical source download were deployed and passed production content and SEO checks.
 
 ## Publication record
 
