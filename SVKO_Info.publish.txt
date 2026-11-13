@@ -43,7 +43,7 @@ Within their configured windows, the Earnings row shows the next report first. A
 
 Earnings, analyst targets, valuation data, company metadata, and mapped quotes depend on TradingView coverage and the user's data permissions.
 
-P/E uses the latest available native share price, including premarket and postmarket, divided by trailing twelve month EPS in the native listing's currency. Reported PEG uses quarterly data, with annual data used only when quarterly data is unavailable. Positive PEG values below 0.50 are green and values below 0.30 are also bold. Zero, negative and missing values are not highlighted. The tooltip identifies the data source and reporting period.
+P/E uses the latest available native share price, including premarket and postmarket, divided by trailing twelve month EPS in the native listing's currency. Forward P/E uses the same price divided by estimated EPS for the next twelve months. Reported PEG uses quarterly data, with annual data used only when quarterly data is unavailable. Positive PEG values below 0.50 are green and values below 0.30 are also bold. Zero, negative and missing values are not highlighted. The tooltip identifies the data source and reporting period.
 
 
 █ [b]LIMITATIONS[/b]
@@ -54,7 +54,7 @@ The extended-hours row and mapped price marker are current-display tools, not hi
 
 Unavailable data appears as N/A where applicable. If a broker symbol cannot be resolved through either mapping method, the indicator draws nothing and skips its mapped data requests.
 
-Forward P/E displays N/A because the annual EPS estimate available to this script does not match the forecast used by TradingView's built-in forward P/E. Reported PEG is a fundamental snapshot, not a ratio recalculated from the latest share price. Valuation remains visible after the market closes, but it cannot refresh independently while the chart receives no updates.
+Reported PEG is a fundamental snapshot, not a ratio recalculated from the latest share price. Valuation remains visible after the market closes, but it cannot refresh independently while the chart receives no updates.
 
 
 █ [b]WEBSITE GUIDE[/b]
@@ -82,3 +82,7 @@ The history high row now has a custom multiline format. Extended Hours now uses 
 [b]22 October 2026[/b]
 
 The source now includes the SVKO Personal Use and Commercial Licence 1.0 notice. Calculations, display and settings are unchanged. Personal use remains free; business use requires a separate commercial licence. Existing permissions for earlier MPL 2.0 versions remain valid. [url=https://trading.cvladan.com/tools/info/]Read the indicator guide and setup instructions[/url].
+
+[b]13 November 2026[/b]
+
+P/E and forward P/E now use the latest available native share price, including extended hours. Forward P/E uses estimated earnings for the next twelve months. The valuation row adds reported PEG: positive values below 0.50 appear green, and those below 0.30 are also bold. Both regular and extended TRADENATION symbols use the mapped native listing for prices and fundamentals. Values remain visible after the session closes and refresh when the chart receives new data. [url=https://trading.cvladan.com/tools/info/]Read the indicator guide and setup instructions[/url].
